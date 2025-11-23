@@ -27,7 +27,7 @@ spec:
         - containerPort: 8080
         env:
         - name: GITHUB_REPO
-          value: "alonsalasi/LEIDOS"
+          value: "alonsalasi/Platform-Engineer-test"
         - name: GITHUB_TOKEN
           valueFrom:
             secretKeyRef:
