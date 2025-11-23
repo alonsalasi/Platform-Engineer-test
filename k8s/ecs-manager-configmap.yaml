@@ -50,12 +50,106 @@ data:
                     self.send_header('Content-type', 'application/json')
                     self.end_headers()
                     self.wfile.write(json.dumps({'error': str(e)}).encode())
+            elif self.path == '/api/asg/list':
+                import boto3
+                try:
+                    asg = boto3.client('autoscaling', region_name='us-east-1')
+                    response = asg.describe_auto_scaling_groups()
+                    groups = []
+                    for group in response.get('AutoScalingGroups', []):
+                        groups.append({
+                            'name': group['AutoScalingGroupName'],
+                            'minSize': group['MinSize'],
+                            'maxSize': group['MaxSize'],
+                            'desiredCapacity': group['DesiredCapacity'],
+                            'instances': len(group['Instances'])
+                        })
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'asgs': groups}).encode())
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': str(e)}).encode())
+            elif self.path.startswith('/api/asg/status/'):
+                import boto3
+                asg_name = self.path.split('/')[-1]
+                try:
+                    asg = boto3.client('autoscaling', region_name='us-east-1')
+                    response = asg.describe_auto_scaling_groups(AutoScalingGroupNames=[asg_name])
+                    if response['AutoScalingGroups']:
+                        group = response['AutoScalingGroups'][0]
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            'status': 'active',
+                            'instances': len(group['Instances']),
+                            'desired': group['DesiredCapacity']
+                        }).encode())
+                    else:
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({'status': 'creating'}).encode())
+                except Exception as e:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'status': 'creating'}).encode())
             else:
                 self.send_response(404)
                 self.end_headers()
         
         def do_POST(self):
-            if self.path == '/api/ecs/create':
+            if self.path == '/api/asg/create':
+                content_length = int(self.headers['Content-Length'])
+                body = self.rfile.read(content_length)
+                data = json.loads(body.decode())
+                
+                webhook_url = f'https://api.github.com/repos/{GITHUB_REPO}/dispatches'
+                payload = {
+                    'event_type': 'create-asg',
+                    'client_payload': {
+                        'asgName': data.get('asgName'),
+                        'instanceType': data.get('instanceType'),
+                        'minSize': data.get('minSize'),
+                        'maxSize': data.get('maxSize'),
+                        'desiredCapacity': data.get('desiredCapacity'),
+                        'clusterName': data.get('clusterName'),
+                        'user': 'k8s-platform'
+                    }
+                }
+                
+                response = requests.post(
+                    webhook_url,
+                    headers={
+                        'Authorization': f'token {GITHUB_TOKEN}',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    json=payload
+                )
+                
+                if response.status_code == 204:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'message': 'ASG creation triggered',
+                        'status': 'pending'
+                    }).encode())
+                else:
+                    print(f'GitHub API Error: {response.status_code} - {response.text}')
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'error': f'GitHub API {response.status_code}: {response.text}'
+                    }).encode())
+            
+            elif self.path == '/api/ecs/create':
                 content_length = int(self.headers['Content-Length'])
                 body = self.rfile.read(content_length)
                 data = json.loads(body.decode())
@@ -193,52 +287,313 @@ data:
     <html>
     <head>
         <meta charset="UTF-8">
-        <title>ECS Manager - K8s Platform</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ECS Platform Manager</title>
         <style>
-            body { font-family: Arial; max-width: 800px; margin: 50px auto; padding: 20px; }
-            h1 { color: #333; }
-            .form-group { margin: 15px 0; }
-            label { display: block; margin-bottom: 5px; font-weight: bold; }
-            input, select { width: 100%; padding: 8px; font-size: 14px; }
-            button { background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; font-size: 16px; margin-top: 10px; }
-            button:hover { background: #0056b3; }
-            .alert { padding: 15px; margin: 15px 0; border-radius: 4px; }
-            .alert-success { background: #d4edda; color: #155724; }
-            .alert-error { background: #f8d7da; color: #721c24; }
-            .badge { background: #28a745; color: white; padding: 5px 10px; border-radius: 3px; font-size: 12px; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 20px;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            .header {
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-radius: 20px;
+                padding: 30px;
+                margin-bottom: 30px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .header h1 {
+                font-size: 2.5em;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+            }
+            .badge {
+                background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 0.9em;
+                font-weight: 600;
+                box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4);
+            }
+            .card {
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-radius: 20px;
+                padding: 30px;
+                margin-bottom: 30px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+            .card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 25px 70px rgba(0,0,0,0.4);
+            }
+            .card h2 {
+                color: #333;
+                margin-bottom: 20px;
+                font-size: 1.8em;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .form-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+                margin-bottom: 20px;
+            }
+            .form-group {
+                display: flex;
+                flex-direction: column;
+            }
+            label {
+                color: #555;
+                font-weight: 600;
+                margin-bottom: 8px;
+                font-size: 0.9em;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            input, select {
+                padding: 12px 16px;
+                border: 2px solid #e0e0e0;
+                border-radius: 10px;
+                font-size: 1em;
+                transition: all 0.3s ease;
+                background: white;
+            }
+            input:focus, select:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+            .btn {
+                padding: 14px 28px;
+                border: none;
+                border-radius: 10px;
+                font-size: 1em;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            }
+            .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            }
+            .btn-primary {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+            .btn-refresh {
+                background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                color: white;
+            }
+            .btn-edit {
+                background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                color: white;
+                padding: 8px 16px;
+                font-size: 0.85em;
+            }
+            .btn-delete {
+                background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+                color: white;
+                padding: 8px 16px;
+                font-size: 0.85em;
+            }
+            .alert {
+                padding: 16px 20px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                font-weight: 500;
+                animation: slideIn 0.3s ease;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            }
+            @keyframes slideIn {
+                from { transform: translateX(-100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            .alert-success {
+                background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                color: white;
+            }
+            .alert-error {
+                background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+                color: white;
+            }
+            table {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                margin-top: 20px;
+            }
+            th {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 16px;
+                text-align: left;
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 0.85em;
+                letter-spacing: 0.5px;
+            }
+            th:first-child { border-radius: 10px 0 0 0; }
+            th:last-child { border-radius: 0 10px 0 0; }
+            td {
+                padding: 16px;
+                border-bottom: 1px solid #f0f0f0;
+                background: white;
+            }
+            tr:last-child td:first-child { border-radius: 0 0 0 10px; }
+            tr:last-child td:last-child { border-radius: 0 0 10px 0; }
+            tr:hover td {
+                background: #f8f9ff;
+            }
+            .actions {
+                display: flex;
+                gap: 10px;
+            }
+            .empty-state {
+                text-align: center;
+                padding: 60px 20px;
+                color: #999;
+                font-size: 1.2em;
+            }
+            .loading {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border: 3px solid rgba(255,255,255,0.3);
+                border-radius: 50%;
+                border-top-color: white;
+                animation: spin 1s ease-in-out infinite;
+            }
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
         </style>
     </head>
     <body>
-        <h1>🚀 ECS Manager <span class="badge">Running on K8s</span></h1>
-        <p>Platform Engineering Practice - Local Kubernetes IDP</p>
-        
-        <div id="alerts"></div>
-        
-        <h2>Current ECS Clusters</h2>
-        <button onclick="loadClusters()" style="background: #17a2b8;">Refresh List</button>
-        <div id="clustersList" style="margin: 15px 0;"></div>
-        
-        <h2>Create ECS Cluster</h2>
-        <div class="form-group">
-            <label>Cluster Name:</label>
-            <input type="text" id="clusterName" placeholder="my-cluster">
+        <div class="container">
+            <div class="header">
+                <h1>🚀 ECS Platform Manager</h1>
+                <span class="badge">Kubernetes IDP</span>
+            </div>
+            
+            <div id="alerts"></div>
+            
+            <div class="card">
+                <h2>📊 Active Clusters</h2>
+                <button onclick="loadClusters()" class="btn btn-refresh">🔄 Refresh</button>
+                <div id="clustersList"></div>
+            </div>
+            
+            <div class="card">
+                <h2>➕ Create New Cluster</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Cluster Name</label>
+                        <input type="text" id="clusterName" placeholder="my-production-cluster">
+                    </div>
+                    <div class="form-group">
+                        <label>Capacity Provider</label>
+                        <select id="capacityProvider" onchange="toggleASGSection()">
+                            <option value="FARGATE">AWS Fargate</option>
+                            <option value="FARGATE_SPOT">Fargate Spot</option>
+                            <option value="EC2">EC2 Instances</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Container Insights</label>
+                        <select id="containerInsights">
+                            <option value="disabled">Disabled (Free)</option>
+                            <option value="enabled">Enabled (Paid)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="asgSection" style="display:none; margin-top:30px; padding-top:30px; border-top:2px solid #e0e0e0;">
+                    <h3 style="color:#333; margin-bottom:20px;">🖥️ Auto Scaling Group Configuration</h3>
+                    <div id="asgSelector" style="margin-bottom:20px;">
+                        <label>Select Existing ASG or Create New</label>
+                        <select id="asgChoice" onchange="toggleASGForm()" style="width:100%; margin-bottom:10px;">
+                            <option value="">Loading ASGs...</option>
+                        </select>
+                    </div>
+                    <div id="asgForm" style="display:none;">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>ASG Name</label>
+                                <input type="text" id="asgName" placeholder="my-ecs-asg">
+                            </div>
+                            <div class="form-group">
+                                <label>Instance Type</label>
+                                <select id="instanceType">
+                                    <option value="t3.micro">t3.micro (2 vCPU, 1GB)</option>
+                                    <option value="t3.small">t3.small (2 vCPU, 2GB)</option>
+                                    <option value="t3.medium">t3.medium (2 vCPU, 4GB)</option>
+                                    <option value="t3.large">t3.large (2 vCPU, 8GB)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Min Size</label>
+                                <input type="number" id="minSize" value="1" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Max Size</label>
+                                <input type="number" id="maxSize" value="3" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Desired Capacity</label>
+                                <input type="number" id="desiredCapacity" value="2" min="0">
+                            </div>
+                        </div>
+                        <button onclick="createASG()" class="btn btn-primary" style="margin-top:10px;">🚀 Create ASG</button>
+                        <div id="asgProgress" style="display:none; margin-top:20px; padding:20px; background:#f0f0f0; border-radius:10px;">
+                            <h4 style="color:#333; margin-bottom:10px;">⏳ Creating ASG...</h4>
+                            <div id="asgStatus"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="createCluster()" class="btn btn-primary" style="margin-top:20px;">🚀 Deploy via GitOps</button>
+            </div>
         </div>
-        <div class="form-group">
-            <label>Capacity Provider:</label>
-            <select id="capacityProvider">
-                <option value="FARGATE">Fargate</option>
-                <option value="FARGATE_SPOT">Fargate Spot</option>
-                <option value="EC2">EC2</option>
-            </select>
+        
+        <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
+            <div style="background:white; border-radius:20px; padding:40px; max-width:500px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+                <h2 style="margin-bottom:20px; color:#333;">✏️ Edit Cluster Settings</h2>
+                <p style="color:#666; margin-bottom:20px;">Cluster: <strong id="editClusterName"></strong></p>
+                <div class="form-group">
+                    <label>Container Insights</label>
+                    <select id="editInsights" style="width:100%;">
+                        <option value="disabled">Disabled (Free)</option>
+                        <option value="enabled">Enabled (Paid)</option>
+                    </select>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:30px;">
+                    <button onclick="applyEdit()" class="btn btn-primary" style="flex:1;">✔️ Apply Changes</button>
+                    <button onclick="closeEditModal()" class="btn" style="flex:1; background:#e0e0e0; color:#333;">❌ Cancel</button>
+                </div>
+            </div>
         </div>
-        <div class="form-group">
-            <label>Container Insights:</label>
-            <select id="containerInsights">
-                <option value="disabled">Disabled</option>
-                <option value="enabled">Enabled</option>
-            </select>
-        </div>
-        <button onclick="createCluster()">Create Cluster (via GitOps)</button>
         
         <script>
             async function loadClusters() {
@@ -248,25 +603,143 @@ data:
                     const list = document.getElementById('clustersList');
                     
                     if (data.clusters && data.clusters.length > 0) {
-                        list.innerHTML = '<table style="width:100%; border-collapse: collapse;"><tr style="background:#f0f0f0;"><th style="padding:8px; border:1px solid #ddd;">Name</th><th style="padding:8px; border:1px solid #ddd;">Status</th><th style="padding:8px; border:1px solid #ddd;">Running Tasks</th><th style="padding:8px; border:1px solid #ddd;">Pending Tasks</th><th style="padding:8px; border:1px solid #ddd;">Actions</th></tr>' +
-                            data.clusters.map(c => `<tr><td style="padding:8px; border:1px solid #ddd;">${c.name}</td><td style="padding:8px; border:1px solid #ddd;">${c.status}</td><td style="padding:8px; border:1px solid #ddd;">${c.runningTasks}</td><td style="padding:8px; border:1px solid #ddd;">${c.pendingTasks}</td><td style="padding:8px; border:1px solid #ddd;"><button onclick="editCluster('${c.name}')" style="padding:5px 10px; background:#ffc107; border:none; cursor:pointer; margin-right:5px;">Edit Insights</button><button onclick="deleteCluster('${c.name}')" style="padding:5px 10px; background:#dc3545; color:white; border:none; cursor:pointer;">Delete</button></td></tr>`).join('') +
-                            '</table>';
+                        list.innerHTML = '<table><thead><tr><th>Cluster Name</th><th>Status</th><th>Running Tasks</th><th>Pending Tasks</th><th>Actions</th></tr></thead><tbody>' +
+                            data.clusters.map(c => `<tr><td><strong>${c.name}</strong></td><td>${c.status}</td><td>${c.runningTasks}</td><td>${c.pendingTasks}</td><td><div class="actions"><button onclick="editCluster('${c.name}')" class="btn btn-edit">✏️ Edit</button><button onclick="deleteCluster('${c.name}')" class="btn btn-delete">🗑️ Delete</button></div></td></tr>`).join('') +
+                            '</tbody></table>';
                     } else {
-                        list.innerHTML = '<p>No clusters found</p>';
+                        list.innerHTML = '<div class="empty-state">📦 No clusters found. Create your first cluster below!</div>';
                     }
                 } catch (error) {
                     document.getElementById('clustersList').innerHTML = '<p style="color:red;">Error loading clusters</p>';
                 }
             }
             
-            window.onload = loadClusters;
+            window.onload = () => {
+                loadClusters();
+                loadASGs();
+            };
             
-            async function editCluster(clusterName) {
-                const insights = prompt(`Container Insights for ${clusterName}\nEnter: enabled or disabled`, 'disabled');
-                if (!insights || (insights !== 'enabled' && insights !== 'disabled')) {
-                    showAlert('Invalid input. Use "enabled" or "disabled"', 'error');
+            async function loadASGs() {
+                try {
+                    const response = await fetch('/api/asg/list');
+                    const data = await response.json();
+                    const select = document.getElementById('asgChoice');
+                    
+                    if (data.asgs && data.asgs.length > 0) {
+                        select.innerHTML = '<option value="">-- Select Existing ASG --</option>' +
+                            data.asgs.map(a => `<option value="${a.name}">${a.name} (${a.instances} instances)</option>`).join('') +
+                            '<option value="new">➕ Create New ASG</option>';
+                    } else {
+                        select.innerHTML = '<option value="new">➕ Create New ASG (No existing ASGs)</option>';
+                    }
+                } catch (error) {
+                    document.getElementById('asgChoice').innerHTML = '<option value="new">➕ Create New ASG</option>';
+                }
+            }
+            
+            function toggleASGSection() {
+                const provider = document.getElementById('capacityProvider').value;
+                const section = document.getElementById('asgSection');
+                
+                if (provider === 'EC2') {
+                    section.style.display = 'block';
+                    loadASGs();
+                } else {
+                    section.style.display = 'none';
+                }
+            }
+            
+            function toggleASGForm() {
+                const choice = document.getElementById('asgChoice').value;
+                const form = document.getElementById('asgForm');
+                
+                if (choice === 'new') {
+                    form.style.display = 'block';
+                } else {
+                    form.style.display = 'none';
+                }
+            }
+            
+            async function createASG() {
+                const asgName = document.getElementById('asgName').value;
+                const instanceType = document.getElementById('instanceType').value;
+                const minSize = document.getElementById('minSize').value;
+                const maxSize = document.getElementById('maxSize').value;
+                const desiredCapacity = document.getElementById('desiredCapacity').value;
+                const clusterName = document.getElementById('clusterName').value;
+                
+                if (!asgName || !clusterName) {
+                    showAlert('Please enter both cluster name and ASG name', 'error');
                     return;
                 }
+                
+                try {
+                    const response = await fetch('/api/asg/create', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({asgName, instanceType, minSize, maxSize, desiredCapacity, clusterName})
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        showAlert('ASG creation started! Tracking progress...', 'success');
+                        document.getElementById('asgProgress').style.display = 'block';
+                        trackASGCreation(asgName);
+                    } else {
+                        showAlert('Error: ' + data.error, 'error');
+                    }
+                } catch (error) {
+                    showAlert('Error: ' + error.message, 'error');
+                }
+            }
+            
+            async function trackASGCreation(asgName) {
+                const statusDiv = document.getElementById('asgStatus');
+                let attempts = 0;
+                const maxAttempts = 60;
+                
+                const interval = setInterval(async () => {
+                    attempts++;
+                    
+                    try {
+                        const response = await fetch(`/api/asg/status/${asgName}`);
+                        const data = await response.json();
+                        
+                        if (data.status === 'active') {
+                            statusDiv.innerHTML = `<p style="color:#11998e; font-weight:600;">✅ ASG Created! Instances: ${data.instances}/${data.desired}</p>`;
+                            clearInterval(interval);
+                            showAlert('ASG is ready! You can now create the cluster.', 'success');
+                            loadASGs();
+                            document.getElementById('asgChoice').value = asgName;
+                        } else {
+                            statusDiv.innerHTML = `<p>⏳ Creating ASG... (${attempts}/${maxAttempts})</p>`;
+                        }
+                        
+                        if (attempts >= maxAttempts) {
+                            statusDiv.innerHTML = '<p style="color:#fa709a;">⚠️ Timeout. Check GitHub Actions for status.</p>';
+                            clearInterval(interval);
+                        }
+                    } catch (error) {
+                        statusDiv.innerHTML = `<p>⏳ Creating ASG... (${attempts}/${maxAttempts})</p>`;
+                    }
+                }, 5000);
+            }
+            
+            function editCluster(clusterName) {
+                document.getElementById('editClusterName').textContent = clusterName;
+                document.getElementById('editModal').style.display = 'flex';
+            }
+            
+            function closeEditModal() {
+                document.getElementById('editModal').style.display = 'none';
+            }
+            
+            async function applyEdit() {
+                const clusterName = document.getElementById('editClusterName').textContent;
+                const insights = document.getElementById('editInsights').value;
+                
+                closeEditModal();
                 
                 try {
                     const response = await fetch('/api/ecs/update', {
@@ -302,6 +775,22 @@ data:
                 const capacityProvider = document.getElementById('capacityProvider').value;
                 const containerInsights = document.getElementById('containerInsights').value;
                 
+                if (!clusterName) {
+                    showAlert('Please enter a cluster name', 'error');
+                    return;
+                }
+                
+                if (capacityProvider === 'EC2') {
+                    const asgChoice = document.getElementById('asgChoice').value;
+                    if (!asgChoice || asgChoice === 'new') {
+                        if (!confirm('No ASG selected. EC2 clusters require an Auto Scaling Group.\n\nWould you like to create an ASG first?')) {
+                            return;
+                        }
+                        showAlert('Please create or select an ASG before creating EC2 cluster', 'error');
+                        return;
+                    }
+                }
+                
                 try {
                     const response = await fetch('/api/ecs/create', {
                         method: 'POST',
@@ -314,6 +803,7 @@ data:
                     if (response.ok) {
                         showAlert('GitHub Actions triggered! Check GitHub for progress (2-5 min)', 'success');
                         document.getElementById('clusterName').value = '';
+                        setTimeout(loadClusters, 3000);
                     } else {
                         showAlert('Error: ' + data.error, 'error');
                     }

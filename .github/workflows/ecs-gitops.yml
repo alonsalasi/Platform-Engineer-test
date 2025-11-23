@@ -2,7 +2,7 @@ name: ECS GitOps Pipeline (With Stages)
 
 on:
   repository_dispatch:
-    types: [create-ecs-cluster, delete-ecs-cluster, update-ecs-cluster]
+    types: [create-ecs-cluster, delete-ecs-cluster, update-ecs-cluster, create-asg]
 
 permissions:
   contents: write
@@ -29,6 +29,103 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      
+      - name: Create ASG Config
+        if: github.event.action == 'create-asg'
+        run: |
+          ASG_NAME="${{ github.event.client_payload.asgName }}"
+          INSTANCE_TYPE="${{ github.event.client_payload.instanceType }}"
+          MIN_SIZE="${{ github.event.client_payload.minSize }}"
+          MAX_SIZE="${{ github.event.client_payload.maxSize }}"
+          DESIRED="${{ github.event.client_payload.desiredCapacity }}"
+          CLUSTER_NAME="${{ github.event.client_payload.clusterName }}"
+          SAFE_NAME=$(echo "$ASG_NAME" | tr '-' '_')
+          
+          cat >> ecs-asg.tf << EOF
+          
+          data "aws_ami" "ecs_optimized_${SAFE_NAME}" {
+            most_recent = true
+            owners      = ["amazon"]
+            filter {
+              name   = "name"
+              values = ["amzn2-ami-ecs-hvm-*-x86_64-ebs"]
+            }
+          }
+          
+          resource "aws_launch_template" "ecs_lt_${SAFE_NAME}" {
+            name_prefix   = "${ASG_NAME}-"
+            image_id      = data.aws_ami.ecs_optimized_${SAFE_NAME}.id
+            instance_type = "${INSTANCE_TYPE}"
+            
+            iam_instance_profile {
+              name = aws_iam_instance_profile.ecs_instance_profile_${SAFE_NAME}.name
+            }
+            
+            user_data = base64encode(<<-EOF
+              #!/bin/bash
+              echo ECS_CLUSTER=${CLUSTER_NAME} >> /etc/ecs/ecs.config
+            EOF
+            )
+            
+            tag_specifications {
+              resource_type = "instance"
+              tags = {
+                Name = "${ASG_NAME}-instance"
+                ManagedBy = "K8s-GitOps"
+              }
+            }
+          }
+          
+          resource "aws_autoscaling_group" "ecs_asg_${SAFE_NAME}" {
+            name                = "${ASG_NAME}"
+            min_size            = ${MIN_SIZE}
+            max_size            = ${MAX_SIZE}
+            desired_capacity    = ${DESIRED}
+            vpc_zone_identifier = ["subnet-0a1b2c3d4e5f6g7h8"]
+            
+            launch_template {
+              id      = aws_launch_template.ecs_lt_${SAFE_NAME}.id
+              version = "\$Latest"
+            }
+            
+            tag {
+              key                 = "Name"
+              value               = "${ASG_NAME}"
+              propagate_at_launch = true
+            }
+            
+            tag {
+              key                 = "AmazonECSManaged"
+              value               = "true"
+              propagate_at_launch = true
+            }
+          }
+          
+          resource "aws_iam_role" "ecs_instance_role_${SAFE_NAME}" {
+            name = "${ASG_NAME}-instance-role"
+            
+            assume_role_policy = jsonencode({
+              Version = "2012-10-17"
+              Statement = [{
+                Action = "sts:AssumeRole"
+                Effect = "Allow"
+                Principal = {
+                  Service = "ec2.amazonaws.com"
+                }
+              }]
+            })
+          }
+          
+          resource "aws_iam_role_policy_attachment" "ecs_instance_role_policy_${SAFE_NAME}" {
+            role       = aws_iam_role.ecs_instance_role_${SAFE_NAME}.name
+            policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+          }
+          
+          resource "aws_iam_instance_profile" "ecs_instance_profile_${SAFE_NAME}" {
+            name = "${ASG_NAME}-instance-profile"
+            role = aws_iam_role.ecs_instance_role_${SAFE_NAME}.name
+          }
+          EOF
       
       - name: Create Cluster Config
         if: github.event.action == 'create-ecs-cluster'
@@ -89,12 +186,14 @@ jobs:
         run: |
           git config user.name "K8s Platform Bot"
           git config user.email "platform@k8s.local"
-          git add ecs-clusters.tf
+          git add ecs-clusters.tf ecs-asg.tf
           
           if [ "${{ github.event.action }}" == "create-ecs-cluster" ]; then
             git commit -m "K8s Platform: Create ECS cluster ${{ github.event.client_payload.clusterName }}"
           elif [ "${{ github.event.action }}" == "update-ecs-cluster" ]; then
             git commit -m "K8s Platform: Update ECS cluster ${{ github.event.client_payload.clusterName }}"
+          elif [ "${{ github.event.action }}" == "create-asg" ]; then
+            git commit -m "K8s Platform: Create ASG ${{ github.event.client_payload.asgName }}"
           else
             git commit -m "K8s Platform: Delete ECS cluster ${{ github.event.client_payload.clusterName }}"
           fi
