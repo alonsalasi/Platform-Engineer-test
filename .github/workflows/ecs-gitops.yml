@@ -93,6 +93,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      
+      - name: Pull Latest Changes
+        run: git pull origin ${{ github.event.repository.default_branch }}
       
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -125,6 +130,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      
+      - name: Pull Latest Changes
+        run: git pull origin ${{ github.event.repository.default_branch }}
       
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
