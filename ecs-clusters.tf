@@ -3,20 +3,6 @@
 
 # Clusters will appear here after creation
 
-resource "aws_ecs_cluster" "cluster_test" {
-  name = "test"
-  
-  setting {
-    name  = "containerInsights"
-    value = "disabled"
-  }
-  
-  tags = {
-    Name = "test"
-    ManagedBy = "K8s-GitOps"
-    CreatedBy = "k8s-platform"
-  }
-}
 
 resource "aws_ecs_cluster_capacity_providers" "cluster_test_capacity" {
   cluster_name = aws_ecs_cluster.cluster_test.name
