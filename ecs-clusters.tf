@@ -4,12 +4,4 @@
 # Clusters will appear here after creation
 
 
-resource "aws_ecs_cluster_capacity_providers" "cluster_test_capacity" {
-  cluster_name = aws_ecs_cluster.cluster_test.name
-  capacity_providers = ["FARGATE"]
-  
-  default_capacity_provider_strategy {
-    capacity_provider = "FARGATE"
-    weight = 1
-  }
 }
