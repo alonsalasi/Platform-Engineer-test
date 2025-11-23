@@ -185,7 +185,23 @@ data:
                         'status': 'pending'
                     }).encode())
                 else:
-                    print(f'GitHub API Error: {response.status_code} - {response.text}')
+                    print(f'Delete=True
+                    )
+                    
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'message': f'ASG {asg_name} deleted successfully'
+                    }).encode())
+                except Exception as e:
+                    print(f'AWS API Error: {str(e)}')
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'error': f'Failed to delete ASG: {str(e)}'
+                    }).encode())GitHub API Error: {response.status_code} - {response.text}')
                     self.send_response(500)
                     self.send_header('Content-type', 'application/json')
                     self.end_headers()
