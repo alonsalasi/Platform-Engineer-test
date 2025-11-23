@@ -2,7 +2,7 @@ name: ECS GitOps Pipeline (With Stages)
 
 on:
   repository_dispatch:
-    types: [create-ecs-cluster, delete-ecs-cluster, update-ecs-cluster, create-asg]
+    types: [create-ecs-cluster, delete-ecs-cluster, update-ecs-cluster, create-asg, delete-asg]
 
 permissions:
   contents: write
@@ -163,6 +163,24 @@ jobs:
           }
           EOF
       
+      - name: Delete ASG Config
+        if: github.event.action == 'delete-asg'
+        run: |
+          ASG_NAME="${{ github.event.client_payload.asgName }}"
+          SAFE_NAME=$(echo "$ASG_NAME" | tr '-' '_')
+          
+          # Use awk to delete ASG resource blocks
+          awk -v asg="${SAFE_NAME}" '
+            /^data "aws_ami" / { if ($0 ~ asg) { skip=1; next } }
+            /^resource "aws_launch_template" / { if ($0 ~ asg) { skip=1; next } }
+            /^resource "aws_autoscaling_group" / { if ($0 ~ asg) { skip=1; next } }
+            /^resource "aws_iam_role" / { if ($0 ~ asg) { skip=1; next } }
+            /^resource "aws_iam_role_policy_attachment" / { if ($0 ~ asg) { skip=1; next } }
+            /^resource "aws_iam_instance_profile" / { if ($0 ~ asg) { skip=1; next } }
+            /^  }$/ { if (skip) { skip=0; next } }
+            !skip
+          ' ecs-asg.tf > ecs-asg.tf.tmp && mv ecs-asg.tf.tmp ecs-asg.tf
+      
       - name: Update Cluster Config
         if: github.event.action == 'update-ecs-cluster'
         run: |
@@ -205,6 +223,8 @@ jobs:
             git commit -m "K8s Platform: Update ECS cluster ${{ github.event.client_payload.clusterName }}"
           elif [ "${{ github.event.action }}" == "create-asg" ]; then
             git commit -m "K8s Platform: Create ASG ${{ github.event.client_payload.asgName }}"
+          elif [ "${{ github.event.action }}" == "delete-asg" ]; then
+            git commit -m "K8s Platform: Delete ASG ${{ github.event.client_payload.asgName }}"
           else
             git commit -m "K8s Platform: Delete ECS cluster ${{ github.event.client_payload.clusterName }}"
           fi

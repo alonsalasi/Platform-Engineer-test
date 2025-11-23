@@ -149,6 +149,46 @@ data:
                         'error': f'GitHub API {response.status_code}: {response.text}'
                     }).encode())
             
+            elif self.path == '/api/asg/delete':
+                content_length = int(self.headers['Content-Length'])
+                body = self.rfile.read(content_length)
+                data = json.loads(body.decode())
+                
+                webhook_url = f'https://api.github.com/repos/{GITHUB_REPO}/dispatches'
+                payload = {
+                    'event_type': 'delete-asg',
+                    'client_payload': {
+                        'asgName': data.get('asgName'),
+                        'user': 'k8s-platform'
+                    }
+                }
+                
+                response = requests.post(
+                    webhook_url,
+                    headers={
+                        'Authorization': f'token {GITHUB_TOKEN}',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    json=payload
+                )
+                
+                if response.status_code == 204:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'message': 'ASG deletion triggered',
+                        'status': 'pending'
+                    }).encode())
+                else:
+                    print(f'GitHub API Error: {response.status_code} - {response.text}')
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'error': f'GitHub API {response.status_code}: {response.text}'
+                    }).encode())
+            
             elif self.path == '/api/ecs/create':
                 content_length = int(self.headers['Content-Length'])
                 body = self.rfile.read(content_length)
@@ -543,8 +583,23 @@ data:
             </div>
             
             <div class="card">
-                <h2>🖥️ Create Auto Scaling Group</h2>
-                <p style="color:#666; margin-bottom:20px;">Required for EC2-based ECS clusters. Create ASG first, then use it when creating an EC2 cluster above.</p>
+                <h2>🖥️ Manage Auto Scaling Groups</h2>
+                <p style="color:#666; margin-bottom:20px;">Create or delete ASGs for EC2-based ECS clusters.</p>
+                
+                <div style="margin-bottom:30px;">
+                    <h3 style="color:#333; font-size:1.2em; margin-bottom:10px;">Delete Existing ASG</h3>
+                    <div style="display:flex; gap:10px; align-items:flex-end;">
+                        <div class="form-group" style="flex:1;">
+                            <label>Select ASG to Delete</label>
+                            <select id="asgDeleteChoice" style="width:100%;">
+                                <option value="">Loading ASGs...</option>
+                            </select>
+                        </div>
+                        <button onclick="deleteASG()" class="btn btn-delete" style="padding:12px 24px;">🗑️ Delete ASG</button>
+                    </div>
+                </div>
+                
+                <h3 style="color:#333; font-size:1.2em; margin-bottom:15px;">Create New ASG</h3>
                 
                 <div class="form-grid">
                     <div class="form-group">
@@ -636,17 +691,22 @@ data:
                     const response = await fetch('/api/asg/list');
                     const data = await response.json();
                     const select = document.getElementById('asgChoice');
+                    const deleteSelect = document.getElementById('asgDeleteChoice');
                     
                     if (data.asgs && data.asgs.length > 0) {
-                        select.innerHTML = '<option value="">-- Select Existing ASG --</option>' +
-                            data.asgs.map(a => `<option value="${a.name}">${a.name} (${a.instances} instances)</option>`).join('');
+                        const options = data.asgs.map(a => `<option value="${a.name}">${a.name} (${a.instances} instances)</option>`).join('');
+                        select.innerHTML = '<option value="">-- Select Existing ASG --</option>' + options;
+                        deleteSelect.innerHTML = '<option value="">-- Select ASG to Delete --</option>' + options;
                     } else {
                         select.innerHTML = '<option value="">No ASGs available - Create one below</option>';
+                        deleteSelect.innerHTML = '<option value="">No ASGs available</option>';
                     }
                     
                 } catch (error) {
                     const select = document.getElementById('asgChoice');
+                    const deleteSelect = document.getElementById('asgDeleteChoice');
                     select.innerHTML = '<option value="">⚠️ Error loading ASGs</option>';
+                    deleteSelect.innerHTML = '<option value="">⚠️ Error loading ASGs</option>';
                 }
             }
             
@@ -821,6 +881,38 @@ data:
                         showAlert('GitHub Actions triggered! Check GitHub for progress (2-5 min)', 'success');
                         document.getElementById('clusterName').value = '';
                         setTimeout(loadClusters, 3000);
+                    } else {
+                        showAlert('Error: ' + data.error, 'error');
+                    }
+                } catch (error) {
+                    showAlert('Error: ' + error.message, 'error');
+                }
+            }
+            
+            async function deleteASG() {
+                const asgName = document.getElementById('asgDeleteChoice').value;
+                
+                if (!asgName) {
+                    showAlert('Please select an ASG to delete', 'error');
+                    return;
+                }
+                
+                if (!confirm(`Are you sure you want to delete ASG "${asgName}"?\n\nThis will terminate all EC2 instances in the group.\n\nThis action cannot be undone.`)) {
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/asg/delete', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({asgName})
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        showAlert('ASG deletion triggered! Check GitHub for progress', 'success');
+                        setTimeout(loadASGs, 3000);
                     } else {
                         showAlert('Error: ' + data.error, 'error');
                     }
