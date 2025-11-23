@@ -151,16 +151,6 @@ jobs:
               CreatedBy = "${{ github.event.client_payload.user }}"
             }
           }
-          
-          resource "aws_ecs_cluster_capacity_providers" "cluster_${SAFE_NAME}_capacity" {
-            cluster_name = aws_ecs_cluster.cluster_${SAFE_NAME}.name
-            capacity_providers = ["${CAPACITY}"]
-            
-            default_capacity_provider_strategy {
-              capacity_provider = "${CAPACITY}"
-              weight = 1
-            }
-          }
           EOF
       
       - name: Delete ASG Config
