@@ -41,13 +41,7 @@ jobs:
           cat >> ecs-clusters.tf << EOF
           
           resource "aws_ecs_cluster" "cluster_${SAFE_NAME}" {
-            cluster_name = "${CLUSTER_NAME}"
-            capacity_providers = ["${CAPACITY}"]
-            
-            default_capacity_provider_strategy {
-              capacity_provider = "${CAPACITY}"
-              weight = 1
-            }
+            name = "${CLUSTER_NAME}"
             
             setting {
               name  = "containerInsights"
@@ -58,6 +52,16 @@ jobs:
               Name = "${CLUSTER_NAME}"
               ManagedBy = "K8s-GitOps"
               CreatedBy = "${{ github.event.client_payload.user }}"
+            }
+          }
+          
+          resource "aws_ecs_cluster_capacity_providers" "cluster_${SAFE_NAME}_capacity" {
+            cluster_name = aws_ecs_cluster.cluster_${SAFE_NAME}.name
+            capacity_providers = ["${CAPACITY}"]
+            
+            default_capacity_provider_strategy {
+              capacity_provider = "${CAPACITY}"
+              weight = 1
             }
           }
           EOF
