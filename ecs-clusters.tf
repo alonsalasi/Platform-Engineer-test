@@ -23,3 +23,24 @@ resource "aws_ecs_cluster" "cluster_test2" {
     CreatedBy = "k8s-platform"
   }
 }
+
+resource "aws_ecs_cluster" "cluster_test5" {
+  cluster_name = "test5"
+  capacity_providers = ["FARGATE"]
+  
+  default_capacity_provider_strategy {
+    capacity_provider = "FARGATE"
+    weight = 1
+  }
+  
+  setting {
+    name  = "containerInsights"
+    value = "disabled"
+  }
+  
+  tags = {
+    Name = "test5"
+    ManagedBy = "K8s-GitOps"
+    CreatedBy = "k8s-platform"
+  }
+}
