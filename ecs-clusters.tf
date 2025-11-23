@@ -2,6 +2,3 @@
 # This file is auto-updated by GitHub Actions
 
 # Clusters will appear here after creation
-
-
-}
