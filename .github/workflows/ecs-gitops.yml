@@ -157,11 +157,14 @@ jobs:
             name = "${CLUSTER_NAME}-capacity-provider"
             
             auto_scaling_group_provider {
-              auto_scaling_group_arn = aws_autoscaling_group.ecs_asg_${SAFE_NAME}.arn
+              auto_scaling_group_arn         = aws_autoscaling_group.ecs_asg_${SAFE_NAME}.arn
+              managed_termination_protection = "${{ github.event.client_payload.terminationProtection }}"
               
               managed_scaling {
-                status          = "ENABLED"
-                target_capacity = 80
+                status                    = "ENABLED"
+                target_capacity           = ${{ github.event.client_payload.targetCapacity }}
+                maximum_scaling_step_size = ${{ github.event.client_payload.maxScalingStep }}
+                minimum_scaling_step_size = ${{ github.event.client_payload.minScalingStep }}
               }
             }
           }
