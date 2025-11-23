@@ -4,6 +4,9 @@ on:
   repository_dispatch:
     types: [create-ecs-cluster, delete-ecs-cluster]
 
+permissions:
+  contents: write
+
 jobs:
   # STAGE 1: Validate
   validate:
