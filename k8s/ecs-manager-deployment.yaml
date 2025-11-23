@@ -21,7 +21,7 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
           - |
-            pip install requests
+            pip install requests boto3
             python /app/server.py
         ports:
         - containerPort: 8080

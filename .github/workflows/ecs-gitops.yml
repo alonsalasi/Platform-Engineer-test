@@ -2,7 +2,7 @@ name: ECS GitOps Pipeline (With Stages)
 
 on:
   repository_dispatch:
-    types: [create-ecs-cluster, delete-ecs-cluster]
+    types: [create-ecs-cluster, delete-ecs-cluster, update-ecs-cluster]
 
 permissions:
   contents: write
@@ -66,6 +66,14 @@ jobs:
           }
           EOF
       
+      - name: Update Cluster Config
+        if: github.event.action == 'update-ecs-cluster'
+        run: |
+          CLUSTER_NAME="${{ github.event.client_payload.clusterName }}"
+          INSIGHTS="${{ github.event.client_payload.containerInsights }}"
+          SAFE_NAME=$(echo "$CLUSTER_NAME" | tr '-' '_')
+          sed -i "/resource \"aws_ecs_cluster\" \"cluster_${SAFE_NAME}\"/,/^  }/s/value = \".*\"/value = \"${INSIGHTS}\"/" ecs-clusters.tf
+      
       - name: Delete Cluster Config
         if: github.event.action == 'delete-ecs-cluster'
         run: |
@@ -83,6 +91,8 @@ jobs:
           
           if [ "${{ github.event.action }}" == "create-ecs-cluster" ]; then
             git commit -m "K8s Platform: Create ECS cluster ${{ github.event.client_payload.clusterName }}"
+          elif [ "${{ github.event.action }}" == "update-ecs-cluster" ]; then
+            git commit -m "K8s Platform: Update ECS cluster ${{ github.event.client_payload.clusterName }}"
           else
             git commit -m "K8s Platform: Delete ECS cluster ${{ github.event.client_payload.clusterName }}"
           fi

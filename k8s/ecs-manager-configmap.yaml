@@ -26,6 +26,30 @@ data:
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({'status': 'healthy'}).encode())
+            elif self.path == '/api/ecs/list':
+                import boto3
+                try:
+                    ecs = boto3.client('ecs', region_name='us-east-1')
+                    response = ecs.list_clusters()
+                    clusters = []
+                    for arn in response.get('clusterArns', []):
+                        name = arn.split('/')[-1]
+                        desc = ecs.describe_clusters(clusters=[arn])['clusters'][0]
+                        clusters.append({
+                            'name': name,
+                            'status': desc['status'],
+                            'runningTasks': desc['runningTasksCount'],
+                            'pendingTasks': desc['pendingTasksCount']
+                        })
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'clusters': clusters}).encode())
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': str(e)}).encode())
             else:
                 self.send_response(404)
                 self.end_headers()
@@ -44,6 +68,48 @@ data:
                         'clusterName': data.get('clusterName'),
                         'capacityProvider': data.get('capacityProvider', 'FARGATE'),
                         'containerInsights': data.get('containerInsights', 'disabled'),
+                        'user': 'k8s-platform'
+                    }
+                }
+                
+                response = requests.post(
+                    webhook_url,
+                    headers={
+                        'Authorization': f'token {GITHUB_TOKEN}',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    json=payload
+                )
+                
+                if response.status_code == 204:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'message': 'GitHub Actions triggered',
+                        'status': 'pending'
+                    }).encode())
+                else:
+                    print(f'GitHub API Error: {response.status_code} - {response.text}')
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        'error': f'GitHub API {response.status_code}: {response.text}'
+                    }).encode())
+            
+            elif self.path == '/api/ecs/update':
+                content_length = int(self.headers['Content-Length'])
+                body = self.rfile.read(content_length)
+                data = json.loads(body.decode())
+                
+                # Trigger GitHub Actions
+                webhook_url = f'https://api.github.com/repos/{GITHUB_REPO}/dispatches'
+                payload = {
+                    'event_type': 'update-ecs-cluster',
+                    'client_payload': {
+                        'clusterName': data.get('clusterName'),
+                        'containerInsights': data.get('containerInsights'),
                         'user': 'k8s-platform'
                     }
                 }
@@ -148,6 +214,10 @@ data:
         
         <div id="alerts"></div>
         
+        <h2>Current ECS Clusters</h2>
+        <button onclick="loadClusters()" style="background: #17a2b8;">Refresh List</button>
+        <div id="clustersList" style="margin: 15px 0;"></div>
+        
         <h2>Create ECS Cluster</h2>
         <div class="form-group">
             <label>Cluster Name:</label>
@@ -178,6 +248,53 @@ data:
         <button onclick="deleteCluster()" style="background: #dc3545;">Delete Cluster (via GitOps)</button>
         
         <script>
+            async function loadClusters() {
+                try {
+                    const response = await fetch('/api/ecs/list');
+                    const data = await response.json();
+                    const list = document.getElementById('clustersList');
+                    
+                    if (data.clusters && data.clusters.length > 0) {
+                        list.innerHTML = '<table style="width:100%; border-collapse: collapse;"><tr style="background:#f0f0f0;"><th style="padding:8px; border:1px solid #ddd;">Name</th><th style="padding:8px; border:1px solid #ddd;">Status</th><th style="padding:8px; border:1px solid #ddd;">Running Tasks</th><th style="padding:8px; border:1px solid #ddd;">Pending Tasks</th><th style="padding:8px; border:1px solid #ddd;">Actions</th></tr>' +
+                            data.clusters.map(c => `<tr><td style="padding:8px; border:1px solid #ddd;">${c.name}</td><td style="padding:8px; border:1px solid #ddd;">${c.status}</td><td style="padding:8px; border:1px solid #ddd;">${c.runningTasks}</td><td style="padding:8px; border:1px solid #ddd;">${c.pendingTasks}</td><td style="padding:8px; border:1px solid #ddd;"><button onclick="editCluster('${c.name}')" style="padding:5px 10px; background:#ffc107; border:none; cursor:pointer;">Edit Insights</button></td></tr>`).join('') +
+                            '</table>';
+                    } else {
+                        list.innerHTML = '<p>No clusters found</p>';
+                    }
+                } catch (error) {
+                    document.getElementById('clustersList').innerHTML = '<p style="color:red;">Error loading clusters</p>';
+                }
+            }
+            
+            window.onload = loadClusters;
+            
+            async function editCluster(clusterName) {
+                const insights = prompt(`Container Insights for ${clusterName}\nEnter: enabled or disabled`, 'disabled');
+                if (!insights || (insights !== 'enabled' && insights !== 'disabled')) {
+                    showAlert('Invalid input. Use "enabled" or "disabled"', 'error');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/ecs/update', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({clusterName, containerInsights: insights})
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        showAlert('Update triggered! Check GitHub for progress', 'success');
+                        setTimeout(loadClusters, 3000);
+                    } else {
+                        showAlert('Error: ' + data.error, 'error');
+                    }
+                } catch (error) {
+                    showAlert('Failed to update cluster', 'error');
+                }
+            }
+            
             function showAlert(message, type) {
                 const alerts = document.getElementById('alerts');
                 const alert = document.createElement('div');
