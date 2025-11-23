@@ -176,9 +176,20 @@ jobs:
         run: |
           CLUSTER_NAME="${{ github.event.client_payload.clusterName }}"
           SAFE_NAME=$(echo "$CLUSTER_NAME" | tr '-' '_')
-          sed -i "/^$/d; /resource \"aws_ecs_cluster\" \"cluster_${SAFE_NAME}\"/,/^  }$/d" ecs-clusters.tf
-          sed -i "/^$/d; /resource \"aws_ecs_cluster_capacity_providers\" \"cluster_${SAFE_NAME}_capacity\"/,/^  }$/d" ecs-clusters.tf
-          sed -i '/^$/N;/^\n$/d' ecs-clusters.tf
+          
+          # Use awk to properly delete resource blocks
+          awk -v cluster="cluster_${SAFE_NAME}" '
+            /^resource "aws_ecs_cluster" / { 
+              if ($0 ~ cluster) { skip=1; next } 
+            }
+            /^resource "aws_ecs_cluster_capacity_providers" / { 
+              if ($0 ~ cluster) { skip=1; next } 
+            }
+            /^}$/ { 
+              if (skip) { skip=0; next } 
+            }
+            !skip
+          ' ecs-clusters.tf > ecs-clusters.tf.tmp && mv ecs-clusters.tf.tmp ecs-clusters.tf
       
       - name: Commit Changes
         env:
