@@ -135,7 +135,49 @@ jobs:
           INSIGHTS="${{ github.event.client_payload.containerInsights }}"
           SAFE_NAME=$(echo "$CLUSTER_NAME" | tr '-' '_')
           
-          cat >> ecs-clusters.tf << EOF
+          if [ "${CAPACITY}" == "EC2" ]; then
+            cat >> ecs-clusters.tf << EOF
+          
+          resource "aws_ecs_cluster" "cluster_${SAFE_NAME}" {
+            name = "${CLUSTER_NAME}"
+            
+            setting {
+              name  = "containerInsights"
+              value = "${INSIGHTS}"
+            }
+            
+            tags = {
+              Name = "${CLUSTER_NAME}"
+              ManagedBy = "K8s-GitOps"
+              CreatedBy = "${{ github.event.client_payload.user }}"
+            }
+          }
+          
+          resource "aws_ecs_capacity_provider" "cluster_${SAFE_NAME}_cp" {
+            name = "${CLUSTER_NAME}-capacity-provider"
+            
+            auto_scaling_group_provider {
+              auto_scaling_group_arn = aws_autoscaling_group.ecs_asg_${SAFE_NAME}.arn
+              
+              managed_scaling {
+                status          = "ENABLED"
+                target_capacity = 80
+              }
+            }
+          }
+          
+          resource "aws_ecs_cluster_capacity_providers" "cluster_${SAFE_NAME}_assoc" {
+            cluster_name       = aws_ecs_cluster.cluster_${SAFE_NAME}.name
+            capacity_providers = [aws_ecs_capacity_provider.cluster_${SAFE_NAME}_cp.name]
+            
+            default_capacity_provider_strategy {
+              capacity_provider = aws_ecs_capacity_provider.cluster_${SAFE_NAME}_cp.name
+              weight            = 1
+            }
+          }
+          EOF
+          else
+            cat >> ecs-clusters.tf << EOF
           
           resource "aws_ecs_cluster" "cluster_${SAFE_NAME}" {
             name = "${CLUSTER_NAME}"
@@ -152,6 +194,7 @@ jobs:
             }
           }
           EOF
+          fi
       
       - name: Delete ASG Config
         if: github.event.action == 'delete-asg'
