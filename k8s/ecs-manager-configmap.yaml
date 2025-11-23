@@ -497,7 +497,7 @@ data:
                 <span class="badge">Kubernetes IDP</span>
             </div>
             
-            <div id="alerts"></div>
+            <div id="alerts" style="position:fixed; top:20px; right:20px; z-index:2000; max-width:400px;"></div>
             
             <div class="card">
                 <h2>📊 Active Clusters</h2>
@@ -506,7 +506,7 @@ data:
             </div>
             
             <div class="card">
-                <h2>➕ Create New Cluster</h2>
+                <h2>➕ Create ECS Cluster</h2>
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Cluster Name</label>
@@ -529,51 +529,61 @@ data:
                     </div>
                 </div>
                 
-                <div id="asgSection" style="display:none; margin-top:30px; padding-top:30px; border-top:2px solid #e0e0e0;">
-                    <h3 style="color:#333; margin-bottom:20px;">🖥️ Auto Scaling Group Configuration</h3>
-                    <div id="asgSelector" style="margin-bottom:20px;">
-                        <label>Select Existing ASG or Create New</label>
-                        <select id="asgChoice" onchange="toggleASGForm()" style="width:100%; margin-bottom:10px;">
+                <div id="asgSection" style="display:none; margin-top:20px;">
+                    <div class="form-group">
+                        <label>Select Auto Scaling Group</label>
+                        <select id="asgChoice" style="width:100%;">
                             <option value="">Loading ASGs...</option>
                         </select>
-                    </div>
-                    <div id="asgForm" style="display:none;">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label>ASG Name</label>
-                                <input type="text" id="asgName" placeholder="my-ecs-asg">
-                            </div>
-                            <div class="form-group">
-                                <label>Instance Type</label>
-                                <select id="instanceType">
-                                    <option value="t3.micro">t3.micro (2 vCPU, 1GB)</option>
-                                    <option value="t3.small">t3.small (2 vCPU, 2GB)</option>
-                                    <option value="t3.medium">t3.medium (2 vCPU, 4GB)</option>
-                                    <option value="t3.large">t3.large (2 vCPU, 8GB)</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Min Size</label>
-                                <input type="number" id="minSize" value="1" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label>Max Size</label>
-                                <input type="number" id="maxSize" value="3" min="1">
-                            </div>
-                            <div class="form-group">
-                                <label>Desired Capacity</label>
-                                <input type="number" id="desiredCapacity" value="2" min="0">
-                            </div>
-                        </div>
-                        <button onclick="createASG()" class="btn btn-primary" style="margin-top:10px;">🚀 Create ASG</button>
-                        <div id="asgProgress" style="display:none; margin-top:20px; padding:20px; background:#f0f0f0; border-radius:10px;">
-                            <h4 style="color:#333; margin-bottom:10px;">⏳ Creating ASG...</h4>
-                            <div id="asgStatus"></div>
-                        </div>
+                        <button onclick="loadASGs()" class="btn btn-refresh" style="margin-top:10px; padding:8px 16px; font-size:0.9em;">🔄 Refresh ASG List</button>
                     </div>
                 </div>
                 
-                <button onclick="createCluster()" class="btn btn-primary" style="margin-top:20px;">🚀 Deploy via GitOps</button>
+                <button onclick="createCluster()" class="btn btn-primary" style="margin-top:20px;">🚀 Deploy Cluster via GitOps</button>
+            </div>
+            
+            <div class="card">
+                <h2>🖥️ Create Auto Scaling Group</h2>
+                <p style="color:#666; margin-bottom:20px;">Required for EC2-based ECS clusters. Create ASG first, then use it when creating an EC2 cluster above.</p>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>ASG Name</label>
+                        <input type="text" id="asgName" placeholder="my-ecs-asg">
+                    </div>
+                    <div class="form-group">
+                        <label>Instance Type</label>
+                        <select id="instanceType">
+                            <option value="t3.micro">t3.micro (2 vCPU, 1GB RAM)</option>
+                            <option value="t3.small">t3.small (2 vCPU, 2GB RAM)</option>
+                            <option value="t3.medium">t3.medium (2 vCPU, 4GB RAM)</option>
+                            <option value="t3.large">t3.large (2 vCPU, 8GB RAM)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-grid" style="margin-top:10px;">
+                    <div class="form-group">
+                        <label>Min Size</label>
+                        <input type="number" id="minSize" value="1" min="0" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Size</label>
+                        <input type="number" id="maxSize" value="3" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Desired Capacity</label>
+                        <input type="number" id="desiredCapacity" value="2" min="0" max="10">
+                    </div>
+                </div>
+                
+                <button onclick="createASG()" class="btn btn-primary" style="margin-top:20px;">🚀 Create ASG via GitOps</button>
+                
+                <div id="asgProgress" style="display:none; margin-top:20px; padding:20px; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius:10px; color:white;">
+                    <h4 style="margin-bottom:10px;">⏳ Creating Auto Scaling Group...</h4>
+                    <div id="asgStatus" style="font-size:1.1em; font-weight:500;"></div>
+                    <div style="margin-top:10px; font-size:0.9em; opacity:0.9;">🕒 This may take 2-5 minutes. Progress updates every 5 seconds.</div>
+                </div>
             </div>
         </div>
         
@@ -597,10 +607,12 @@ data:
         
         <script>
             async function loadClusters() {
+                const list = document.getElementById('clustersList');
+                list.innerHTML = '<div class="empty-state"><div class="loading"></div> Refreshing clusters...</div>';
+                
                 try {
                     const response = await fetch('/api/ecs/list');
                     const data = await response.json();
-                    const list = document.getElementById('clustersList');
                     
                     if (data.clusters && data.clusters.length > 0) {
                         list.innerHTML = '<table><thead><tr><th>Cluster Name</th><th>Status</th><th>Running Tasks</th><th>Pending Tasks</th><th>Actions</th></tr></thead><tbody>' +
@@ -610,7 +622,7 @@ data:
                         list.innerHTML = '<div class="empty-state">📦 No clusters found. Create your first cluster below!</div>';
                     }
                 } catch (error) {
-                    document.getElementById('clustersList').innerHTML = '<p style="color:red;">Error loading clusters</p>';
+                    list.innerHTML = '<p style="color:red;">Error loading clusters</p>';
                 }
             }
             
@@ -627,13 +639,14 @@ data:
                     
                     if (data.asgs && data.asgs.length > 0) {
                         select.innerHTML = '<option value="">-- Select Existing ASG --</option>' +
-                            data.asgs.map(a => `<option value="${a.name}">${a.name} (${a.instances} instances)</option>`).join('') +
-                            '<option value="new">➕ Create New ASG</option>';
+                            data.asgs.map(a => `<option value="${a.name}">${a.name} (${a.instances} instances)</option>`).join('');
                     } else {
-                        select.innerHTML = '<option value="new">➕ Create New ASG (No existing ASGs)</option>';
+                        select.innerHTML = '<option value="">No ASGs available - Create one below</option>';
                     }
+                    
                 } catch (error) {
-                    document.getElementById('asgChoice').innerHTML = '<option value="new">➕ Create New ASG</option>';
+                    const select = document.getElementById('asgChoice');
+                    select.innerHTML = '<option value="">⚠️ Error loading ASGs</option>';
                 }
             }
             
@@ -649,27 +662,16 @@ data:
                 }
             }
             
-            function toggleASGForm() {
-                const choice = document.getElementById('asgChoice').value;
-                const form = document.getElementById('asgForm');
-                
-                if (choice === 'new') {
-                    form.style.display = 'block';
-                } else {
-                    form.style.display = 'none';
-                }
-            }
-            
             async function createASG() {
                 const asgName = document.getElementById('asgName').value;
                 const instanceType = document.getElementById('instanceType').value;
                 const minSize = document.getElementById('minSize').value;
                 const maxSize = document.getElementById('maxSize').value;
                 const desiredCapacity = document.getElementById('desiredCapacity').value;
-                const clusterName = document.getElementById('clusterName').value;
+                const clusterName = 'temp-cluster';
                 
-                if (!asgName || !clusterName) {
-                    showAlert('Please enter both cluster name and ASG name', 'error');
+                if (!asgName) {
+                    showAlert('Please enter ASG name', 'error');
                     return;
                 }
                 
@@ -698,6 +700,9 @@ data:
                 const statusDiv = document.getElementById('asgStatus');
                 let attempts = 0;
                 const maxAttempts = 60;
+                let lastCheck = Date.now();
+                
+                statusDiv.innerHTML = '⏳ Step 1/4: Triggering GitHub Actions workflow...';
                 
                 const interval = setInterval(async () => {
                     attempts++;
@@ -707,21 +712,36 @@ data:
                         const data = await response.json();
                         
                         if (data.status === 'active') {
-                            statusDiv.innerHTML = `<p style="color:#11998e; font-weight:600;">✅ ASG Created! Instances: ${data.instances}/${data.desired}</p>`;
+                            statusDiv.innerHTML = `✅ ASG Created Successfully!<br>Instances: ${data.instances}/${data.desired} running`;
                             clearInterval(interval);
-                            showAlert('ASG is ready! You can now create the cluster.', 'success');
-                            loadASGs();
-                            document.getElementById('asgChoice').value = asgName;
+                            showAlert(`ASG "${asgName}" is ready! Refreshing list...`, 'success');
+                            setTimeout(() => {
+                                loadASGs();
+                                document.getElementById('asgProgress').style.display = 'none';
+                                document.getElementById('asgName').value = '';
+                            }, 2000);
                         } else {
-                            statusDiv.innerHTML = `<p>⏳ Creating ASG... (${attempts}/${maxAttempts})</p>`;
+                            const step = attempts < 10 ? '2/4: Building terraform config...' : 
+                                       attempts < 30 ? '3/4: Creating AWS resources...' : 
+                                       '4/4: Launching EC2 instances...';
+                            statusDiv.innerHTML = `⏳ ${step}<br>Progress: ${attempts}/${maxAttempts} checks`;
+                        }
+                        
+                        // Check if workflow failed (no ASG after 2 minutes)
+                        if (attempts > 24 && data.status === 'creating') {
+                            statusDiv.innerHTML = '❌ ASG Creation Failed!<br>Check <a href="https://github.com/alonsalasi/Platform-Engineer-test/actions" target="_blank" style="color:white; text-decoration:underline;">GitHub Actions</a> for error details.';
+                            clearInterval(interval);
+                            showAlert('ASG creation failed. Check GitHub Actions logs.', 'error');
+                            document.getElementById('asgProgress').style.display = 'none';
                         }
                         
                         if (attempts >= maxAttempts) {
-                            statusDiv.innerHTML = '<p style="color:#fa709a;">⚠️ Timeout. Check GitHub Actions for status.</p>';
+                            statusDiv.innerHTML = '⚠️ Timeout reached. Check <a href="https://github.com/alonsalasi/Platform-Engineer-test/actions" target="_blank" style="color:white; text-decoration:underline;">GitHub Actions</a> for status.';
                             clearInterval(interval);
+                            showAlert('ASG creation timeout. Check GitHub Actions.', 'error');
                         }
                     } catch (error) {
-                        statusDiv.innerHTML = `<p>⏳ Creating ASG... (${attempts}/${maxAttempts})</p>`;
+                        statusDiv.innerHTML = `⏳ Waiting for ASG creation...<br>Check ${attempts}/${maxAttempts}`;
                     }
                 }, 5000);
             }
@@ -782,10 +802,7 @@ data:
                 
                 if (capacityProvider === 'EC2') {
                     const asgChoice = document.getElementById('asgChoice').value;
-                    if (!asgChoice || asgChoice === 'new') {
-                        if (!confirm('No ASG selected. EC2 clusters require an Auto Scaling Group.\n\nWould you like to create an ASG first?')) {
-                            return;
-                        }
+                    if (!asgChoice) {
                         showAlert('Please create or select an ASG before creating EC2 cluster', 'error');
                         return;
                     }
