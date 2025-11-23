@@ -240,13 +240,6 @@ data:
         </div>
         <button onclick="createCluster()">Create Cluster (via GitOps)</button>
         
-        <h2>Delete ECS Cluster</h2>
-        <div class="form-group">
-            <label>Cluster Name:</label>
-            <input type="text" id="deleteClusterName" placeholder="my-cluster">
-        </div>
-        <button onclick="deleteCluster()" style="background: #dc3545;">Delete Cluster (via GitOps)</button>
-        
         <script>
             async function loadClusters() {
                 try {
@@ -256,7 +249,7 @@ data:
                     
                     if (data.clusters && data.clusters.length > 0) {
                         list.innerHTML = '<table style="width:100%; border-collapse: collapse;"><tr style="background:#f0f0f0;"><th style="padding:8px; border:1px solid #ddd;">Name</th><th style="padding:8px; border:1px solid #ddd;">Status</th><th style="padding:8px; border:1px solid #ddd;">Running Tasks</th><th style="padding:8px; border:1px solid #ddd;">Pending Tasks</th><th style="padding:8px; border:1px solid #ddd;">Actions</th></tr>' +
-                            data.clusters.map(c => `<tr><td style="padding:8px; border:1px solid #ddd;">${c.name}</td><td style="padding:8px; border:1px solid #ddd;">${c.status}</td><td style="padding:8px; border:1px solid #ddd;">${c.runningTasks}</td><td style="padding:8px; border:1px solid #ddd;">${c.pendingTasks}</td><td style="padding:8px; border:1px solid #ddd;"><button onclick="editCluster('${c.name}')" style="padding:5px 10px; background:#ffc107; border:none; cursor:pointer;">Edit Insights</button></td></tr>`).join('') +
+                            data.clusters.map(c => `<tr><td style="padding:8px; border:1px solid #ddd;">${c.name}</td><td style="padding:8px; border:1px solid #ddd;">${c.status}</td><td style="padding:8px; border:1px solid #ddd;">${c.runningTasks}</td><td style="padding:8px; border:1px solid #ddd;">${c.pendingTasks}</td><td style="padding:8px; border:1px solid #ddd;"><button onclick="editCluster('${c.name}')" style="padding:5px 10px; background:#ffc107; border:none; cursor:pointer; margin-right:5px;">Edit Insights</button><button onclick="deleteCluster('${c.name}')" style="padding:5px 10px; background:#dc3545; color:white; border:none; cursor:pointer;">Delete</button></td></tr>`).join('') +
                             '</table>';
                     } else {
                         list.innerHTML = '<p>No clusters found</p>';
@@ -309,11 +302,6 @@ data:
                 const capacityProvider = document.getElementById('capacityProvider').value;
                 const containerInsights = document.getElementById('containerInsights').value;
                 
-                if (!clusterName) {
-                    showAlert('Please enter cluster name', 'error');
-                    return;
-                }
-                
                 try {
                     const response = await fetch('/api/ecs/create', {
                         method: 'POST',
@@ -334,15 +322,10 @@ data:
                 }
             }
             
-            async function deleteCluster() {
-                const clusterName = document.getElementById('deleteClusterName').value;
-                
-                if (!clusterName) {
-                    showAlert('Please enter cluster name', 'error');
+            async function deleteCluster(clusterName) {
+                if (!confirm(`Are you sure you want to delete cluster "${clusterName}"?\n\nThis action cannot be undone.`)) {
                     return;
                 }
-                
-                if (!confirm(`Delete cluster "${clusterName}"?`)) return;
                 
                 try {
                     const response = await fetch('/api/ecs/delete', {
@@ -354,8 +337,8 @@ data:
                     const data = await response.json();
                     
                     if (response.ok) {
-                        showAlert('GitHub Actions triggered! Check GitHub for progress (2-5 min)', 'success');
-                        document.getElementById('deleteClusterName').value = '';
+                        showAlert('Cluster deletion triggered! Check GitHub for progress', 'success');
+                        setTimeout(loadClusters, 3000);
                     } else {
                         showAlert('Error: ' + data.error, 'error');
                     }
