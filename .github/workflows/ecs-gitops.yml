@@ -398,8 +398,16 @@ jobs:
           # Delete ASG
           aws autoscaling delete-auto-scaling-group --auto-scaling-group-name "${ASG_NAME}" --force-delete 2>/dev/null || true
           
-          # Wait for ASG deletion
-          sleep 10
+          # Wait for ASG deletion to complete (max 2 minutes)
+          echo "Waiting for ASG deletion to complete..."
+          for i in {1..24}; do
+            if ! aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names "${ASG_NAME}" 2>/dev/null | grep -q "${ASG_NAME}"; then
+              echo "ASG deleted successfully"
+              break
+            fi
+            echo "ASG still deleting... ($i/24)"
+            sleep 5
+          done
           
           # Delete launch template
           LT_ID=$(aws ec2 describe-launch-templates --filters "Name=tag:Name,Values=${ASG_NAME}" --query 'LaunchTemplates[0].LaunchTemplateId' --output text 2>/dev/null || echo "")
