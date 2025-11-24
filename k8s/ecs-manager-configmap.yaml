@@ -122,8 +122,7 @@ data:
                         'targetCapacity': data.get('targetCapacity', '80'),
                         'maxScalingStep': data.get('maxScalingStep', '10'),
                         'minScalingStep': data.get('minScalingStep', '1'),
-                        'terminationProtection': data.get('terminationProtection', 'DISABLED'),
-                        'user': 'k8s-platform'
+                        'terminationProtection': data.get('terminationProtection', 'DISABLED')
                     }
                 }
                 

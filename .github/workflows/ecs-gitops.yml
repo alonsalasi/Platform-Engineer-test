@@ -271,15 +271,15 @@ jobs:
           git add ecs-clusters.tf ecs-asg.tf
           
           if [ "${{ github.event.action }}" == "create-ecs-cluster" ]; then
-            git commit -m "K8s Platform: Create ECS cluster ${{ github.event.client_payload.clusterName }}"
+            git commit -m "Platform: Create ECS cluster ${{ github.event.client_payload.clusterName }}"
           elif [ "${{ github.event.action }}" == "update-ecs-cluster" ]; then
-            git commit -m "K8s Platform: Update ECS cluster ${{ github.event.client_payload.clusterName }}"
+            git commit -m "Platform: Update ECS cluster ${{ github.event.client_payload.clusterName }}"
           elif [ "${{ github.event.action }}" == "create-asg" ]; then
-            git commit -m "K8s Platform: Create ASG ${{ github.event.client_payload.asgName }}"
+            git commit -m "Platform: Create ASG ${{ github.event.client_payload.asgName }}"
           elif [ "${{ github.event.action }}" == "delete-asg" ]; then
-            git commit -m "K8s Platform: Delete ASG ${{ github.event.client_payload.asgName }}"
+            git commit -m "Platform: Delete ASG ${{ github.event.client_payload.asgName }}"
           else
-            git commit -m "K8s Platform: Delete ECS cluster ${{ github.event.client_payload.clusterName }}"
+            git commit -m "Platform: Delete ECS cluster ${{ github.event.client_payload.clusterName }}"
           fi
           
           git push https://$GH_TOKEN@github.com/${{ github.repository }}.git
