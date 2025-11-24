@@ -380,13 +380,15 @@ jobs:
         run: terraform init
       
       - name: Import Existing IAM Resources
+        if: github.event.client_payload.asgName != ''
         run: |
           ASG_NAME="${{ github.event.client_payload.asgName }}"
           SAFE_NAME=$(echo "$ASG_NAME" | tr '-' '_')
           
-          terraform import "aws_iam_role.ecs_instance_role_${SAFE_NAME}" "${ASG_NAME}-instance-role" 2>/dev/null || true
-          terraform import "aws_iam_role_policy_attachment.ecs_instance_role_policy_${SAFE_NAME}" "${ASG_NAME}-instance-role/arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role" 2>/dev/null || true
-          terraform import "aws_iam_instance_profile.ecs_instance_profile_${SAFE_NAME}" "${ASG_NAME}-instance-profile" 2>/dev/null || true
+          echo "Attempting to import IAM resources for ${ASG_NAME}..."
+          terraform import "aws_iam_role.ecs_instance_role_${SAFE_NAME}" "${ASG_NAME}-instance-role" || echo "Role not found or already imported"
+          terraform import "aws_iam_role_policy_attachment.ecs_instance_role_policy_${SAFE_NAME}" "${ASG_NAME}-instance-role/arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role" || echo "Policy attachment not found or already imported"
+          terraform import "aws_iam_instance_profile.ecs_instance_profile_${SAFE_NAME}" "${ASG_NAME}-instance-profile" || echo "Instance profile not found or already imported"
       
       - name: Remove Deleted ASG from State
         if: github.event.action == 'delete-asg'
