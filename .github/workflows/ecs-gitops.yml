@@ -349,13 +349,7 @@ jobs:
         run: terraform init
       
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
-      
-      - name: Upload Plan
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-plan
-          path: tfplan
+        run: terraform plan
   
   # STAGE 4: Deploy to AWS
   deploy:
@@ -385,11 +379,6 @@ jobs:
       - name: Terraform Init
         run: terraform init
       
-      - name: Download Plan
-        uses: actions/download-artifact@v4
-        with:
-          name: terraform-plan
-      
       - name: Remove Deleted ASG from State
         if: github.event.action == 'delete-asg'
         run: |
@@ -404,7 +393,7 @@ jobs:
           terraform state rm "aws_iam_instance_profile.ecs_instance_profile_${SAFE_NAME}" || true
       
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -auto-approve
   
   # STAGE 5: Verify
   verify:
