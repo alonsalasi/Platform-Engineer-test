@@ -390,11 +390,24 @@ jobs:
           terraform import "aws_iam_role_policy_attachment.ecs_instance_role_policy_${SAFE_NAME}" "${ASG_NAME}-instance-role/arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role" || echo "Policy attachment not found or already imported"
           terraform import "aws_iam_instance_profile.ecs_instance_profile_${SAFE_NAME}" "${ASG_NAME}-instance-profile" || echo "Instance profile not found or already imported"
       
-      - name: Delete IAM Resources from AWS
+      - name: Delete ASG from AWS
         if: github.event.action == 'delete-asg'
         run: |
           ASG_NAME="${{ github.event.client_payload.asgName }}"
           
+          # Delete ASG
+          aws autoscaling delete-auto-scaling-group --auto-scaling-group-name "${ASG_NAME}" --force-delete 2>/dev/null || true
+          
+          # Wait for ASG deletion
+          sleep 10
+          
+          # Delete launch template
+          LT_ID=$(aws ec2 describe-launch-templates --filters "Name=tag:Name,Values=${ASG_NAME}" --query 'LaunchTemplates[0].LaunchTemplateId' --output text 2>/dev/null || echo "")
+          if [ ! -z "$LT_ID" ] && [ "$LT_ID" != "None" ]; then
+            aws ec2 delete-launch-template --launch-template-id "$LT_ID" 2>/dev/null || true
+          fi
+          
+          # Delete IAM resources
           aws iam remove-role-from-instance-profile --instance-profile-name "${ASG_NAME}-instance-profile" --role-name "${ASG_NAME}-instance-role" 2>/dev/null || true
           aws iam delete-instance-profile --instance-profile-name "${ASG_NAME}-instance-profile" 2>/dev/null || true
           aws iam detach-role-policy --role-name "${ASG_NAME}-instance-role" --policy-arn "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role" 2>/dev/null || true
