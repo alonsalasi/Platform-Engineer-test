@@ -390,6 +390,16 @@ jobs:
           terraform import "aws_iam_role_policy_attachment.ecs_instance_role_policy_${SAFE_NAME}" "${ASG_NAME}-instance-role/arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role" || echo "Policy attachment not found or already imported"
           terraform import "aws_iam_instance_profile.ecs_instance_profile_${SAFE_NAME}" "${ASG_NAME}-instance-profile" || echo "Instance profile not found or already imported"
       
+      - name: Delete IAM Resources from AWS
+        if: github.event.action == 'delete-asg'
+        run: |
+          ASG_NAME="${{ github.event.client_payload.asgName }}"
+          
+          aws iam remove-role-from-instance-profile --instance-profile-name "${ASG_NAME}-instance-profile" --role-name "${ASG_NAME}-instance-role" 2>/dev/null || true
+          aws iam delete-instance-profile --instance-profile-name "${ASG_NAME}-instance-profile" 2>/dev/null || true
+          aws iam detach-role-policy --role-name "${ASG_NAME}-instance-role" --policy-arn "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role" 2>/dev/null || true
+          aws iam delete-role --role-name "${ASG_NAME}-instance-role" 2>/dev/null || true
+      
       - name: Remove Deleted ASG from State
         if: github.event.action == 'delete-asg'
         run: |
