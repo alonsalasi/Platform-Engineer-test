@@ -37,11 +37,12 @@ resource "aws_launch_template" "ecs_lt_test" {
 }
 
 resource "aws_autoscaling_group" "ecs_asg_test" {
-  name                = "test"
-  min_size            = 1
-  max_size            = 3
-  desired_capacity    = 2
-  vpc_zone_identifier = ["subnet-0315f97df3d9be14d", "subnet-0fbcaf451e77e245d"]
+  name                      = "test"
+  min_size                  = 1
+  max_size                  = 3
+  desired_capacity          = 2
+  vpc_zone_identifier       = ["subnet-0315f97df3d9be14d", "subnet-0fbcaf451e77e245d"]
+  wait_for_capacity_timeout = "0"
   
   launch_template {
     id      = aws_launch_template.ecs_lt_test.id
