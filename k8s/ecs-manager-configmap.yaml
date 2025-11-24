@@ -57,12 +57,17 @@ data:
                     response = asg.describe_auto_scaling_groups()
                     groups = []
                     for group in response.get('AutoScalingGroups', []):
+                        tags = {tag['Key']: tag['Value'] for tag in group.get('Tags', [])}
                         groups.append({
                             'name': group['AutoScalingGroupName'],
                             'minSize': group['MinSize'],
                             'maxSize': group['MaxSize'],
                             'desiredCapacity': group['DesiredCapacity'],
-                            'instances': len(group['Instances'])
+                            'instances': len(group['Instances']),
+                            'targetCapacity': tags.get('CapacityProviderTargetCapacity', '80'),
+                            'maxScalingStep': tags.get('CapacityProviderMaxScalingStep', '10'),
+                            'minScalingStep': tags.get('CapacityProviderMinScalingStep', '1'),
+                            'terminationProtection': tags.get('CapacityProviderTerminationProtection', 'DISABLED')
                         })
                     self.send_response(200)
                     self.send_header('Content-type', 'application/json')
@@ -751,17 +756,21 @@ data:
                 loadASGs();
             };
             
+            let asgData = [];
+            
             async function loadASGs() {
                 try {
                     const response = await fetch('/api/asg/list');
                     const data = await response.json();
+                    asgData = data.asgs || [];
                     const select = document.getElementById('asgChoice');
                     const deleteSelect = document.getElementById('asgDeleteChoice');
                     
-                    if (data.asgs && data.asgs.length > 0) {
-                        const options = data.asgs.map(a => `<option value="${a.name}">${a.name} (${a.instances} instances)</option>`).join('');
+                    if (asgData.length > 0) {
+                        const options = asgData.map(a => `<option value="${a.name}">${a.name} (${a.instances} instances)</option>`).join('');
                         select.innerHTML = '<option value="">-- Select Existing ASG --</option>' + options;
                         deleteSelect.innerHTML = '<option value="">-- Select ASG to Delete --</option>' + options;
+                        select.onchange = () => fillCapacityProviderSettings();
                     } else {
                         select.innerHTML = '<option value="">No ASGs available - Create one below</option>';
                         deleteSelect.innerHTML = '<option value="">No ASGs available</option>';
@@ -772,6 +781,17 @@ data:
                     const deleteSelect = document.getElementById('asgDeleteChoice');
                     select.innerHTML = '<option value="">⚠️ Error loading ASGs</option>';
                     deleteSelect.innerHTML = '<option value="">⚠️ Error loading ASGs</option>';
+                }
+            }
+            
+            function fillCapacityProviderSettings() {
+                const asgName = document.getElementById('asgChoice').value;
+                const asg = asgData.find(a => a.name === asgName);
+                if (asg) {
+                    document.getElementById('clusterTargetCapacity').value = asg.targetCapacity;
+                    document.getElementById('clusterMaxScalingStep').value = asg.maxScalingStep;
+                    document.getElementById('clusterMinScalingStep').value = asg.minScalingStep;
+                    document.getElementById('clusterTerminationProtection').value = asg.terminationProtection;
                 }
             }
             

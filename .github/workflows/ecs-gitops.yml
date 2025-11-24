@@ -99,6 +99,30 @@ jobs:
               value               = "true"
               propagate_at_launch = true
             }
+            
+            tag {
+              key                 = "CapacityProviderTargetCapacity"
+              value               = "${{ github.event.client_payload.targetCapacity }}"
+              propagate_at_launch = false
+            }
+            
+            tag {
+              key                 = "CapacityProviderMaxScalingStep"
+              value               = "${{ github.event.client_payload.maxScalingStep }}"
+              propagate_at_launch = false
+            }
+            
+            tag {
+              key                 = "CapacityProviderMinScalingStep"
+              value               = "${{ github.event.client_payload.minScalingStep }}"
+              propagate_at_launch = false
+            }
+            
+            tag {
+              key                 = "CapacityProviderTerminationProtection"
+              value               = "${{ github.event.client_payload.terminationProtection }}"
+              propagate_at_launch = false
+            }
           }
           
           resource "aws_iam_role" "ecs_instance_role_${SAFE_NAME}" {
