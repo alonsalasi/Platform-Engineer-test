@@ -392,6 +392,16 @@ jobs:
           terraform state rm "aws_iam_role_policy_attachment.ecs_instance_role_policy_${SAFE_NAME}" || true
           terraform state rm "aws_iam_instance_profile.ecs_instance_profile_${SAFE_NAME}" || true
       
+      - name: Import Existing IAM Resources
+        if: github.event.action == 'create-asg'
+        run: |
+          ASG_NAME="${{ github.event.client_payload.asgName }}"
+          SAFE_NAME=$(echo "$ASG_NAME" | tr '-' '_')
+          
+          terraform import "aws_iam_role.ecs_instance_role_${SAFE_NAME}" "${ASG_NAME}-instance-role" 2>/dev/null || true
+          terraform import "aws_iam_role_policy_attachment.ecs_instance_role_policy_${SAFE_NAME}" "${ASG_NAME}-instance-role/arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role" 2>/dev/null || true
+          terraform import "aws_iam_instance_profile.ecs_instance_profile_${SAFE_NAME}" "${ASG_NAME}-instance-profile" 2>/dev/null || true
+      
       - name: Terraform Apply
         run: terraform apply -auto-approve
   
