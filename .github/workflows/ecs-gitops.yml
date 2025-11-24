@@ -136,6 +136,8 @@ jobs:
           SAFE_NAME=$(echo "$CLUSTER_NAME" | tr '-' '_')
           
           if [ "${CAPACITY}" == "EC2" ]; then
+            ASG_NAME="${{ github.event.client_payload.asgName }}"
+            ASG_SAFE_NAME=$(echo "$ASG_NAME" | tr '-' '_')
             cat >> ecs-clusters.tf << EOF
           
           resource "aws_ecs_cluster" "cluster_${SAFE_NAME}" {
@@ -157,7 +159,7 @@ jobs:
             name = "${CLUSTER_NAME}-capacity-provider"
             
             auto_scaling_group_provider {
-              auto_scaling_group_arn         = aws_autoscaling_group.ecs_asg_${SAFE_NAME}.arn
+              auto_scaling_group_arn         = aws_autoscaling_group.ecs_asg_${ASG_SAFE_NAME}.arn
               managed_termination_protection = "${{ github.event.client_payload.terminationProtection || 'DISABLED' }}"
               
               managed_scaling {

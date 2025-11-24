@@ -184,23 +184,7 @@ data:
                         'status': 'pending'
                     }).encode())
                 else:
-                    print(f'Delete=True
-                    )
-                    
-                    self.send_response(200)
-                    self.send_header('Content-type', 'application/json')
-                    self.end_headers()
-                    self.wfile.write(json.dumps({
-                        'message': f'ASG {asg_name} deleted successfully'
-                    }).encode())
-                except Exception as e:
-                    print(f'AWS API Error: {str(e)}')
-                    self.send_response(500)
-                    self.send_header('Content-type', 'application/json')
-                    self.end_headers()
-                    self.wfile.write(json.dumps({
-                        'error': f'Failed to delete ASG: {str(e)}'
-                    }).encode())GitHub API Error: {response.status_code} - {response.text}')
+                    print(f'GitHub API Error: {response.status_code} - {response.text}')
                     self.send_response(500)
                     self.send_header('Content-type', 'application/json')
                     self.end_headers()
@@ -221,7 +205,11 @@ data:
                         'clusterName': data.get('clusterName'),
                         'capacityProvider': data.get('capacityProvider', 'FARGATE'),
                         'containerInsights': data.get('containerInsights', 'disabled'),
-                        'user': 'k8s-platform'
+                        'asgName': data.get('asgName', ''),
+                        'targetCapacity': data.get('targetCapacity', '80'),
+                        'maxScalingStep': data.get('maxScalingStep', '10'),
+                        'minScalingStep': data.get('minScalingStep', '1'),
+                        'terminationProtection': data.get('terminationProtection', 'DISABLED')
                     }
                 }
                 
@@ -921,19 +909,26 @@ data:
                     return;
                 }
                 
+                let payload = {clusterName, capacityProvider, containerInsights};
+                
                 if (capacityProvider === 'EC2') {
                     const asgChoice = document.getElementById('asgChoice').value;
                     if (!asgChoice) {
                         showAlert('Please create or select an ASG before creating EC2 cluster', 'error');
                         return;
                     }
+                    payload.asgName = asgChoice;
+                    payload.targetCapacity = '80';
+                    payload.maxScalingStep = '10';
+                    payload.minScalingStep = '1';
+                    payload.terminationProtection = 'DISABLED';
                 }
                 
                 try {
                     const response = await fetch('/api/ecs/create', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({clusterName, capacityProvider, containerInsights})
+                        body: JSON.stringify(payload)
                     });
                     
                     const data = await response.json();
