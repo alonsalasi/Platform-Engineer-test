@@ -83,11 +83,12 @@ jobs:
           }
           
           resource "aws_autoscaling_group" "ecs_asg_${SAFE_NAME}" {
-            name                = "${ASG_NAME}"
-            min_size            = ${MIN_SIZE}
-            max_size            = ${MAX_SIZE}
-            desired_capacity    = ${DESIRED}
-            vpc_zone_identifier = ["subnet-0315f97df3d9be14d", "subnet-0fbcaf451e77e245d"]
+            name                      = "${ASG_NAME}"
+            min_size                  = ${MIN_SIZE}
+            max_size                  = ${MAX_SIZE}
+            desired_capacity          = ${DESIRED}
+            vpc_zone_identifier       = ["subnet-0315f97df3d9be14d", "subnet-0fbcaf451e77e245d"]
+            wait_for_capacity_timeout = "0"
             
             launch_template {
               id      = aws_launch_template.ecs_lt_${SAFE_NAME}.id
