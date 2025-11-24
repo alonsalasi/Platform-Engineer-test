@@ -41,6 +41,12 @@ jobs:
           CLUSTER_NAME="${{ github.event.client_payload.clusterName }}"
           SAFE_NAME=$(echo "$ASG_NAME" | tr '-' '_')
           
+          # Check if ASG already exists in config
+          if grep -q "resource \"aws_autoscaling_group\" \"ecs_asg_${SAFE_NAME}\"" ecs-asg.tf; then
+            echo "ASG ${ASG_NAME} already exists in config, skipping..."
+            exit 0
+          fi
+          
           cat >> ecs-asg.tf << EOF
           
           data "aws_ami" "ecs_optimized_${SAFE_NAME}" {
