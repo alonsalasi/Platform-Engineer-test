@@ -158,13 +158,13 @@ jobs:
             
             auto_scaling_group_provider {
               auto_scaling_group_arn         = aws_autoscaling_group.ecs_asg_${SAFE_NAME}.arn
-              managed_termination_protection = "${{ github.event.client_payload.terminationProtection }}"
+              managed_termination_protection = "${{ github.event.client_payload.terminationProtection || 'DISABLED' }}"
               
               managed_scaling {
                 status                    = "ENABLED"
-                target_capacity           = ${{ github.event.client_payload.targetCapacity }}
-                maximum_scaling_step_size = ${{ github.event.client_payload.maxScalingStep }}
-                minimum_scaling_step_size = ${{ github.event.client_payload.minScalingStep }}
+                target_capacity           = ${{ github.event.client_payload.targetCapacity || 80 }}
+                maximum_scaling_step_size = ${{ github.event.client_payload.maxScalingStep || 10 }}
+                minimum_scaling_step_size = ${{ github.event.client_payload.minScalingStep || 1 }}
               }
             }
           }
