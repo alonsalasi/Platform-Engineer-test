@@ -18,6 +18,9 @@ data:
             if self.path == '/':
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
+                self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                self.send_header('Pragma', 'no-cache')
+                self.send_header('Expires', '0')
                 self.end_headers()
                 with open('/app/index.html', 'rb') as f:
                     self.wfile.write(f.read())
@@ -78,6 +81,24 @@ data:
                     self.send_header('Content-type', 'application/json')
                     self.end_headers()
                     self.wfile.write(json.dumps({'error': str(e)}).encode())
+            elif self.path.startswith('/api/workflow/status'):
+                try:
+                    response = requests.get(
+                        f'https://api.github.com/repos/{GITHUB_REPO}/actions/runs?per_page=5',
+                        headers={
+                            'Authorization': f'token {GITHUB_TOKEN}',
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    )
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(response.content)
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': str(e)}).encode())
             elif self.path.startswith('/api/asg/status/'):
                 import boto3
                 asg_name = self.path.split('/')[-1]
@@ -98,12 +119,12 @@ data:
                         self.send_response(200)
                         self.send_header('Content-type', 'application/json')
                         self.end_headers()
-                        self.wfile.write(json.dumps({'status': 'creating'}).encode())
+                        self.wfile.write(json.dumps({'status': 'not_found'}).encode())
                 except Exception as e:
                     self.send_response(200)
                     self.send_header('Content-type', 'application/json')
                     self.end_headers()
-                    self.wfile.write(json.dumps({'status': 'creating'}).encode())
+                    self.wfile.write(json.dumps({'status': 'not_found'}).encode())
             else:
                 self.send_response(404)
                 self.end_headers()
@@ -624,23 +645,8 @@ data:
             </div>
             
             <div class="card">
-                <h2>🖥️ Manage Auto Scaling Groups</h2>
-                <p style="color:#666; margin-bottom:20px;">Create or delete ASGs for EC2-based ECS clusters.</p>
-                
-                <div style="margin-bottom:30px;">
-                    <h3 style="color:#333; font-size:1.2em; margin-bottom:10px;">Delete Existing ASG</h3>
-                    <div style="display:flex; gap:10px; align-items:flex-end;">
-                        <div class="form-group" style="flex:1;">
-                            <label>Select ASG to Delete</label>
-                            <select id="asgDeleteChoice" style="width:100%;">
-                                <option value="">Loading ASGs...</option>
-                            </select>
-                        </div>
-                        <button onclick="deleteASG()" class="btn btn-delete" style="padding:12px 24px;">🗑️ Delete ASG</button>
-                    </div>
-                </div>
-                
-                <h3 style="color:#333; font-size:1.2em; margin-bottom:15px;">Create New ASG</h3>
+                <h2>➕ Create Auto Scaling Group</h2>
+                <p style="color:#666; margin-bottom:20px;">Create ASGs for EC2-based ECS clusters.</p>
                 
                 <div class="form-grid">
                     <div class="form-group">
@@ -703,11 +709,32 @@ data:
                 </div>
                 
                 <button onclick="createASG()" class="btn btn-primary" style="margin-top:20px;">🚀 Create ASG via GitOps</button>
-                
-                <div id="asgProgress" style="display:none; margin-top:20px; padding:20px; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius:10px; color:white;">
-                    <h4 style="margin-bottom:10px;">⏳ Creating Auto Scaling Group...</h4>
-                    <div id="asgStatus" style="font-size:1.1em; font-weight:500;"></div>
-                    <div style="margin-top:10px; font-size:0.9em; opacity:0.9;">🕒 This may take 2-5 minutes. Progress updates every 5 seconds.</div>
+            </div>
+            
+            <div class="card">
+                <h2>🗑️ Delete Auto Scaling Group</h2>
+                <p style="color:#666; margin-bottom:20px;">Remove existing ASGs and terminate all EC2 instances.</p>
+                <div style="display:flex; gap:10px; align-items:flex-end;">
+                    <div class="form-group" style="flex:1;">
+                        <label>Select ASG to Delete</label>
+                        <select id="asgDeleteChoice" style="width:100%;">
+                            <option value="">Loading ASGs...</option>
+                        </select>
+                    </div>
+                    <button onclick="loadASGs()" class="btn btn-refresh" style="padding:12px 24px;">🔄 Refresh</button>
+                    <button onclick="deleteASG()" class="btn btn-delete" style="padding:12px 24px;">🗑️ Delete ASG</button>
+                </div>
+            </div>
+            
+            <div id="progressTracker" style="display:none; position:fixed; bottom:20px; right:20px; width:450px; background:rgba(255,255,255,0.98); backdrop-filter:blur(10px); border-radius:15px; box-shadow:0 10px 40px rgba(0,0,0,0.3); z-index:1500; border:3px solid #667eea; opacity:0; transform:scale(0.8); transition:opacity 0.4s ease, transform 0.4s ease;">
+                <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding:15px 20px; border-radius:12px 12px 0 0; display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="color:white; margin:0; font-size:1.1em;">⚙️ <span id="progressTitle">Operation Progress</span></h3>
+                    <button onclick="closeProgressTracker()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:1.2em; font-weight:bold;">×</button>
+                </div>
+                <div style="padding:20px;">
+                    <div id="progressSteps"></div>
+                    <div id="progressDetails" style="margin-top:15px; padding:12px; background:#f8f9ff; border-radius:8px; font-size:0.9em; color:#666;"></div>
+                    <div id="progressError" style="display:none; margin-top:15px; padding:12px; background:#ffe6e6; border-radius:8px; color:#d32f2f; font-weight:600;"></div>
                 </div>
             </div>
         </div>
@@ -754,6 +781,7 @@ data:
             window.onload = () => {
                 loadClusters();
                 loadASGs();
+                setInterval(loadClusters, 30000);
             };
             
             let asgData = [];
@@ -842,8 +870,7 @@ data:
                     
                     if (response.ok) {
                         showAlert('ASG creation started! Tracking progress...', 'success');
-                        document.getElementById('asgProgress').style.display = 'block';
-                        trackASGCreation(asgName);
+                        showProgressTracker('Creating ASG', 'create-asg', asgName);
                     } else {
                         showAlert('Error: ' + data.error, 'error');
                     }
@@ -852,52 +879,110 @@ data:
                 }
             }
             
-            async function trackASGCreation(asgName) {
-                const statusDiv = document.getElementById('asgStatus');
+            let progressInterval = null;
+            
+            function showProgressTracker(title, operation, resourceName) {
+                const tracker = document.getElementById('progressTracker');
+                document.getElementById('progressTitle').textContent = title;
+                tracker.style.display = 'block';
+                setTimeout(() => {
+                    tracker.style.opacity = '1';
+                    tracker.style.transform = 'scale(1)';
+                }, 10);
+                trackWorkflowProgress(operation, resourceName);
+            }
+            
+            function closeProgressTracker() {
+                const tracker = document.getElementById('progressTracker');
+                tracker.style.opacity = '0';
+                tracker.style.transform = 'scale(0.7)';
+                setTimeout(() => tracker.style.display = 'none', 400);
+                if (progressInterval) clearInterval(progressInterval);
+            }
+            
+            async function trackWorkflowProgress(operation, resourceName) {
+                const stepsDiv = document.getElementById('progressSteps');
+                const detailsDiv = document.getElementById('progressDetails');
+                const errorDiv = document.getElementById('progressError');
                 let attempts = 0;
                 const maxAttempts = 60;
-                let lastCheck = Date.now();
+                let workflowFound = false;
                 
-                statusDiv.innerHTML = '⏳ Step 1/4: Triggering GitHub Actions workflow...';
+                const steps = {
+                    'create-asg': ['Validate', 'Build Config', 'Terraform Plan', 'Deploy to AWS', 'Verify'],
+                    'delete-asg': ['Validate', 'Build Config', 'Terraform Plan', 'Deploy to AWS', 'Verify'],
+                    'create-ecs-cluster': ['Validate', 'Build Config', 'Terraform Plan', 'Deploy to AWS', 'Verify'],
+                    'delete-ecs-cluster': ['Validate', 'Build Config', 'Terraform Plan', 'Deploy to AWS', 'Verify']
+                };
                 
-                const interval = setInterval(async () => {
+                const stepNames = steps[operation] || ['Processing'];
+                
+                function renderSteps(currentStep, status) {
+                    return stepNames.map((step, idx) => {
+                        const icon = idx < currentStep ? '✅' : idx === currentStep ? (status === 'in_progress' ? '⏳' : status === 'failure' ? '❌' : '⏳') : '⚪';
+                        const color = idx < currentStep ? '#00b894' : idx === currentStep ? '#667eea' : '#ccc';
+                        return `<div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;"><span style="font-size:1.5em;">${icon}</span><span style="color:${color}; font-weight:600;">${step}</span></div>`;
+                    }).join('');
+                }
+                
+                stepsDiv.innerHTML = renderSteps(-1, 'queued');
+                detailsDiv.innerHTML = '🔍 Searching for workflow run...';
+                errorDiv.style.display = 'none';
+                
+                if (progressInterval) clearInterval(progressInterval);
+                
+                progressInterval = setInterval(async () => {
                     attempts++;
                     
                     try {
-                        const response = await fetch(`/api/asg/status/${asgName}`);
+                        const response = await fetch('/api/workflow/status');
                         const data = await response.json();
                         
-                        if (data.status === 'active') {
-                            statusDiv.innerHTML = `✅ ASG Created Successfully!<br>Instances: ${data.instances}/${data.desired} running`;
-                            clearInterval(interval);
-                            showAlert(`ASG "${asgName}" is ready! Refreshing list...`, 'success');
-                            setTimeout(() => {
-                                loadASGs();
-                                document.getElementById('asgProgress').style.display = 'none';
-                                document.getElementById('asgName').value = '';
-                            }, 2000);
-                        } else {
-                            const step = attempts < 10 ? '2/4: Building terraform config...' : 
-                                       attempts < 30 ? '3/4: Creating AWS resources...' : 
-                                       '4/4: Launching EC2 instances...';
-                            statusDiv.innerHTML = `⏳ ${step}<br>Progress: ${attempts}/${maxAttempts} checks`;
-                        }
-                        
-                        // Check if workflow failed (no ASG after 2 minutes)
-                        if (attempts > 24 && data.status === 'creating') {
-                            statusDiv.innerHTML = '❌ ASG Creation Failed!<br>Check <a href="https://github.com/alonsalasi/Platform-Engineer-test/actions" target="_blank" style="color:white; text-decoration:underline;">GitHub Actions</a> for error details.';
-                            clearInterval(interval);
-                            showAlert('ASG creation failed. Check GitHub Actions logs.', 'error');
-                            document.getElementById('asgProgress').style.display = 'none';
+                        if (data.workflow_runs && data.workflow_runs.length > 0) {
+                            const run = data.workflow_runs[0];
+                            const status = run.status;
+                            const conclusion = run.conclusion;
+                            
+                            workflowFound = true;
+                            
+                            if (status === 'queued') {
+                                stepsDiv.innerHTML = renderSteps(0, 'queued');
+                                detailsDiv.innerHTML = `⏳ Workflow queued. Waiting for runner...<br>Attempt: ${attempts}/${maxAttempts}`;
+                            } else if (status === 'in_progress') {
+                                const elapsed = Math.floor((new Date() - new Date(run.created_at)) / 1000);
+                                const currentStep = Math.min(Math.floor(elapsed / 20), stepNames.length - 1);
+                                stepsDiv.innerHTML = renderSteps(currentStep, 'in_progress');
+                                detailsDiv.innerHTML = `⚙️ Workflow running: <strong>${run.name}</strong><br>⏱️ Elapsed: ${elapsed}s | Attempt: ${attempts}/${maxAttempts}<br>🔗 <a href="${run.html_url}" target="_blank" style="color:#667eea;">View on GitHub</a>`;
+                            } else if (status === 'completed') {
+                                clearInterval(progressInterval);
+                                
+                                if (conclusion === 'success') {
+                                    stepsDiv.innerHTML = renderSteps(stepNames.length, 'success');
+                                    detailsDiv.innerHTML = `✅ <strong>Operation completed successfully!</strong><br>Resource: ${resourceName}<br>🔗 <a href="${run.html_url}" target="_blank" style="color:#667eea;">View workflow</a><br><br><em style="color:#999; font-size:0.9em;">Click the × button to dismiss</em>`;
+                                    showAlert(`${resourceName} operation completed successfully!`, 'success');
+                                    loadClusters();
+                                    loadASGs();
+                                } else {
+                                    const failedStep = Math.floor(stepNames.length / 2);
+                                    stepsDiv.innerHTML = renderSteps(failedStep, 'failure');
+                                    errorDiv.style.display = 'block';
+                                    errorDiv.innerHTML = `❌ <strong>Workflow failed!</strong><br>Conclusion: ${conclusion}<br>🔗 <a href="${run.html_url}" target="_blank" style="color:#d32f2f; text-decoration:underline;">View error logs on GitHub</a>`;
+                                    detailsDiv.innerHTML = `Check the GitHub Actions logs for detailed error information.`;
+                                    showAlert(`Operation failed. Check GitHub Actions logs.`, 'error');
+                                }
+                            }
+                        } else if (!workflowFound && attempts > 5) {
+                            detailsDiv.innerHTML = `⚠️ No workflow found yet. GitHub may be processing the trigger...<br>Attempt: ${attempts}/${maxAttempts}`;
                         }
                         
                         if (attempts >= maxAttempts) {
-                            statusDiv.innerHTML = '⚠️ Timeout reached. Check <a href="https://github.com/alonsalasi/Platform-Engineer-test/actions" target="_blank" style="color:white; text-decoration:underline;">GitHub Actions</a> for status.';
-                            clearInterval(interval);
-                            showAlert('ASG creation timeout. Check GitHub Actions.', 'error');
+                            clearInterval(progressInterval);
+                            errorDiv.style.display = 'block';
+                            errorDiv.innerHTML = `⏱️ <strong>Timeout reached</strong><br>The workflow may still be running. <a href="https://github.com/alonsalasi/Platform-Engineer-test/actions" target="_blank" style="color:#d32f2f; text-decoration:underline;">Check GitHub Actions</a>`;
+                            showAlert('Progress tracking timeout. Check GitHub Actions.', 'error');
                         }
                     } catch (error) {
-                        statusDiv.innerHTML = `⏳ Waiting for ASG creation...<br>Check ${attempts}/${maxAttempts}`;
+                        detailsDiv.innerHTML = `⚠️ Error fetching workflow status: ${error.message}<br>Attempt: ${attempts}/${maxAttempts}`;
                     }
                 }, 5000);
             }
@@ -991,9 +1076,8 @@ data:
                     const data = await response.json();
                     
                     if (response.ok) {
-                        showAlert('GitHub Actions triggered! Check GitHub for progress (2-5 min)', 'success');
-                        document.getElementById('clusterName').value = '';
-                        setTimeout(loadClusters, 3000);
+                        showAlert('Cluster creation started! Tracking progress...', 'success');
+                        showProgressTracker('Creating Cluster', 'create-ecs-cluster', clusterName);
                     } else {
                         showAlert('Error: ' + data.error, 'error');
                     }
@@ -1024,8 +1108,8 @@ data:
                     const data = await response.json();
                     
                     if (response.ok) {
-                        showAlert('ASG deletion triggered! Check GitHub for progress', 'success');
-                        setTimeout(loadASGs, 3000);
+                        showAlert('ASG deletion started! Tracking progress...', 'success');
+                        showProgressTracker('Deleting ASG', 'delete-asg', asgName);
                     } else {
                         showAlert('Error: ' + data.error, 'error');
                     }
@@ -1049,8 +1133,8 @@ data:
                     const data = await response.json();
                     
                     if (response.ok) {
-                        showAlert('Cluster deletion triggered! Check GitHub for progress', 'success');
-                        setTimeout(loadClusters, 3000);
+                        showAlert('Cluster deletion started! Tracking progress...', 'success');
+                        showProgressTracker('Deleting Cluster', 'delete-ecs-cluster', clusterName);
                     } else {
                         showAlert('Error: ' + data.error, 'error');
                     }

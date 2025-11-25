@@ -1,0 +1,1156 @@
+apiVersion: v1
+data:
+  index.html: "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <meta
+    name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>ECS
+    Platform Manager</title>\n    <style>\n        * { margin: 0; padding: 0; box-sizing:
+    border-box; }\n        body {\n            font-family: 'Segoe UI', Tahoma, Geneva,
+    Verdana, sans-serif;\n            background: linear-gradient(135deg, #667eea
+    0%, #764ba2 100%);\n            min-height: 100vh;\n            padding: 20px;\n
+    \       }\n        .container {\n            max-width: 1200px;\n            margin:
+    0 auto;\n        }\n        .header {\n            background: rgba(255, 255,
+    255, 0.95);\n            backdrop-filter: blur(10px);\n            border-radius:
+    20px;\n            padding: 30px;\n            margin-bottom: 30px;\n            box-shadow:
+    0 20px 60px rgba(0,0,0,0.3);\n            display: flex;\n            justify-content:
+    space-between;\n            align-items: center;\n        }\n        .header h1
+    {\n            font-size: 2.5em;\n            background: linear-gradient(135deg,
+    #667eea 0%, #764ba2 100%);\n            -webkit-background-clip: text;\n            -webkit-text-fill-color:
+    transparent;\n            display: flex;\n            align-items: center;\n            gap:
+    15px;\n        }\n        .badge {\n            background: linear-gradient(135deg,
+    #11998e 0%, #38ef7d 100%);\n            color: white;\n            padding: 8px
+    16px;\n            border-radius: 20px;\n            font-size: 0.9em;\n            font-weight:
+    600;\n            box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4);\n        }\n
+    \       .card {\n            background: rgba(255, 255, 255, 0.95);\n            backdrop-filter:
+    blur(10px);\n            border-radius: 20px;\n            padding: 30px;\n            margin-bottom:
+    30px;\n            box-shadow: 0 20px 60px rgba(0,0,0,0.3);\n            transition:
+    transform 0.3s ease, box-shadow 0.3s ease;\n        }\n        .card:hover {\n
+    \           transform: translateY(-5px);\n            box-shadow: 0 25px 70px
+    rgba(0,0,0,0.4);\n        }\n        .card h2 {\n            color: #333;\n            margin-bottom:
+    20px;\n            font-size: 1.8em;\n            display: flex;\n            align-items:
+    center;\n            gap: 10px;\n        }\n        .form-grid {\n            display:
+    grid;\n            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));\n
+    \           gap: 20px;\n            margin-bottom: 20px;\n        }\n        .form-group
+    {\n            display: flex;\n            flex-direction: column;\n        }\n
+    \       label {\n            color: #555;\n            font-weight: 600;\n            margin-bottom:
+    8px;\n            font-size: 0.9em;\n            text-transform: uppercase;\n
+    \           letter-spacing: 0.5px;\n        }\n        input, select {\n            padding:
+    12px 16px;\n            border: 2px solid #e0e0e0;\n            border-radius:
+    10px;\n            font-size: 1em;\n            transition: all 0.3s ease;\n            background:
+    white;\n        }\n        input:focus, select:focus {\n            outline: none;\n
+    \           border-color: #667eea;\n            box-shadow: 0 0 0 3px rgba(102,
+    126, 234, 0.1);\n        }\n        .btn {\n            padding: 14px 28px;\n
+    \           border: none;\n            border-radius: 10px;\n            font-size:
+    1em;\n            font-weight: 600;\n            cursor: pointer;\n            transition:
+    all 0.3s ease;\n            text-transform: uppercase;\n            letter-spacing:
+    0.5px;\n            box-shadow: 0 4px 15px rgba(0,0,0,0.2);\n        }\n        .btn:hover
+    {\n            transform: translateY(-2px);\n            box-shadow: 0 6px 20px
+    rgba(0,0,0,0.3);\n        }\n        .btn-primary {\n            background: linear-gradient(135deg,
+    #667eea 0%, #764ba2 100%);\n            color: white;\n        }\n        .btn-refresh
+    {\n            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);\n
+    \           color: white;\n        }\n        .btn-edit {\n            background:
+    linear-gradient(135deg, #f093fb 0%, #f5576c 100%);\n            color: white;\n
+    \           padding: 8px 16px;\n            font-size: 0.85em;\n        }\n        .btn-delete
+    {\n            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);\n
+    \           color: white;\n            padding: 8px 16px;\n            font-size:
+    0.85em;\n        }\n        .alert {\n            padding: 20px 24px;\n            border-radius:
+    15px;\n            margin-bottom: 15px;\n            font-weight: 600;\n            font-size:
+    1.1em;\n            animation: slideInBounce 0.5s ease;\n            box-shadow:
+    0 8px 30px rgba(0,0,0,0.3);\n            border: 3px solid rgba(255,255,255,0.3);\n
+    \           backdrop-filter: blur(10px);\n        }\n        @keyframes slideInBounce
+    {\n            0% { transform: translateX(400px) scale(0.5); opacity: 0; }\n            60%
+    { transform: translateX(-20px) scale(1.05); opacity: 1; }\n            100% {
+    transform: translateX(0) scale(1); opacity: 1; }\n        }\n        .alert-success
+    {\n            background: linear-gradient(135deg, #00b894 0%, #00ff88 100%);\n
+    \           color: white;\n            text-shadow: 0 2px 4px rgba(0,0,0,0.2);\n
+    \       }\n        .alert-error {\n            background: linear-gradient(135deg,
+    #ff3838 0%, #ff6b6b 100%);\n            color: white;\n            text-shadow:
+    0 2px 4px rgba(0,0,0,0.2);\n        }\n        table {\n            width: 100%;\n
+    \           border-collapse: separate;\n            border-spacing: 0;\n            margin-top:
+    20px;\n        }\n        th {\n            background: linear-gradient(135deg,
+    #667eea 0%, #764ba2 100%);\n            color: white;\n            padding: 16px;\n
+    \           text-align: left;\n            font-weight: 600;\n            text-transform:
+    uppercase;\n            font-size: 0.85em;\n            letter-spacing: 0.5px;\n
+    \       }\n        th:first-child { border-radius: 10px 0 0 0; }\n        th:last-child
+    { border-radius: 0 10px 0 0; }\n        td {\n            padding: 16px;\n            border-bottom:
+    1px solid #f0f0f0;\n            background: white;\n        }\n        tr:last-child
+    td:first-child { border-radius: 0 0 0 10px; }\n        tr:last-child td:last-child
+    { border-radius: 0 0 10px 0; }\n        tr:hover td {\n            background:
+    #f8f9ff;\n        }\n        .actions {\n            display: flex;\n            gap:
+    10px;\n        }\n        .empty-state {\n            text-align: center;\n            padding:
+    60px 20px;\n            color: #999;\n            font-size: 1.2em;\n        }\n
+    \       .loading {\n            display: inline-block;\n            width: 20px;\n
+    \           height: 20px;\n            border: 3px solid rgba(255,255,255,0.3);\n
+    \           border-radius: 50%;\n            border-top-color: white;\n            animation:
+    spin 1s ease-in-out infinite;\n        }\n        @keyframes spin {\n            to
+    { transform: rotate(360deg); }\n        }\n    </style>\n</head>\n<body>\n    <div
+    class=\"container\">\n        <div class=\"header\">\n            <h1>\U0001F680
+    ECS Platform Manager</h1>\n            <span class=\"badge\">Kubernetes IDP</span>\n
+    \       </div>\n        \n        <div id=\"alerts\" style=\"position:fixed; top:20px;
+    right:20px; z-index:2000; max-width:400px;\"></div>\n        \n        <div class=\"card\">\n
+    \           <h2>\U0001F4CA Active Clusters</h2>\n            <button onclick=\"loadClusters()\"
+    class=\"btn btn-refresh\">\U0001F504 Refresh</button>\n            <div id=\"clustersList\"></div>\n
+    \       </div>\n        \n        <div class=\"card\">\n            <h2>➕ Create
+    ECS Cluster</h2>\n            <div class=\"form-grid\">\n                <div
+    class=\"form-group\">\n                    <label>Cluster Name</label>\n                    <input
+    type=\"text\" id=\"clusterName\" placeholder=\"my-production-cluster\">\n                </div>\n
+    \               <div class=\"form-group\">\n                    <label>Capacity
+    Provider</label>\n                    <select id=\"capacityProvider\" onchange=\"toggleASGSection()\">\n
+    \                       <option value=\"FARGATE\">AWS Fargate</option>\n                        <option
+    value=\"FARGATE_SPOT\">Fargate Spot</option>\n                        <option
+    value=\"EC2\">EC2 Instances</option>\n                    </select>\n                </div>\n
+    \               <div class=\"form-group\">\n                    <label>Container
+    Insights</label>\n                    <select id=\"containerInsights\">\n                        <option
+    value=\"disabled\">Disabled (Free)</option>\n                        <option value=\"enabled\">Enabled
+    (Paid)</option>\n                    </select>\n                </div>\n            </div>\n
+    \           \n            <div id=\"asgSection\" style=\"display:none; margin-top:20px;\">\n
+    \               <div class=\"form-group\">\n                    <label>Select
+    Auto Scaling Group</label>\n                    <select id=\"asgChoice\" style=\"width:100%;\">\n
+    \                       <option value=\"\">Loading ASGs...</option>\n                    </select>\n
+    \                   <button onclick=\"loadASGs()\" class=\"btn btn-refresh\" style=\"margin-top:10px;
+    padding:8px 16px; font-size:0.9em;\">\U0001F504 Refresh ASG List</button>\n                </div>\n
+    \               \n                <h3 style=\"color:#333; font-size:1.1em; margin:20px
+    0 15px 0; padding-top:20px; border-top:2px solid #e0e0e0;\">Capacity Provider
+    Settings *</h3>\n                <div class=\"form-grid\">\n                    <div
+    class=\"form-group\">\n                        <label>Target Capacity (%) *</label>\n
+    \                       <input type=\"number\" id=\"clusterTargetCapacity\" value=\"80\"
+    min=\"1\" max=\"100\" required>\n                    </div>\n                    <div
+    class=\"form-group\">\n                        <label>Max Scaling Step *</label>\n
+    \                       <input type=\"number\" id=\"clusterMaxScalingStep\" value=\"10\"
+    min=\"1\" max=\"100\" required>\n                    </div>\n                    <div
+    class=\"form-group\">\n                        <label>Min Scaling Step *</label>\n
+    \                       <input type=\"number\" id=\"clusterMinScalingStep\" value=\"1\"
+    min=\"1\" max=\"10\" required>\n                    </div>\n                </div>\n
+    \               <div class=\"form-group\" style=\"margin-top:10px;\">\n                    <label>Termination
+    Protection *</label>\n                    <select id=\"clusterTerminationProtection\"
+    required>\n                        <option value=\"DISABLED\">Disabled (Allow
+    scale-down)</option>\n                        <option value=\"ENABLED\">Enabled
+    (Prevent termination)</option>\n                    </select>\n                </div>\n
+    \           </div>\n            \n            <button onclick=\"createCluster()\"
+    class=\"btn btn-primary\" style=\"margin-top:20px;\">\U0001F680 Deploy Cluster
+    via GitOps</button>\n        </div>\n        \n        <div class=\"card\">\n
+    \           <h2>➕ Create Auto Scaling Group</h2>\n            <p style=\"color:#666;
+    margin-bottom:20px;\">Create ASGs for EC2-based ECS clusters.</p>\n            \n
+    \           <div class=\"form-grid\">\n                <div class=\"form-group\">\n
+    \                   <label>ASG Name</label>\n                    <input type=\"text\"
+    id=\"asgName\" placeholder=\"my-ecs-asg\">\n                </div>\n                <div
+    class=\"form-group\">\n                    <label>Instance Type</label>\n                    <select
+    id=\"instanceType\">\n                        <option value=\"t3.micro\">t3.micro
+    (2 vCPU, 1GB RAM)</option>\n                        <option value=\"t3.small\">t3.small
+    (2 vCPU, 2GB RAM)</option>\n                        <option value=\"t3.medium\">t3.medium
+    (2 vCPU, 4GB RAM)</option>\n                        <option value=\"t3.large\">t3.large
+    (2 vCPU, 8GB RAM)</option>\n                    </select>\n                </div>\n
+    \           </div>\n            \n            <div class=\"form-grid\" style=\"margin-top:10px;\">\n
+    \               <div class=\"form-group\">\n                    <label>Min Size</label>\n
+    \                   <input type=\"number\" id=\"minSize\" value=\"1\" min=\"0\"
+    max=\"10\">\n                </div>\n                <div class=\"form-group\">\n
+    \                   <label>Max Size</label>\n                    <input type=\"number\"
+    id=\"maxSize\" value=\"3\" min=\"1\" max=\"10\">\n                </div>\n                <div
+    class=\"form-group\">\n                    <label>Desired Capacity</label>\n                    <input
+    type=\"number\" id=\"desiredCapacity\" value=\"2\" min=\"0\" max=\"10\">\n                </div>\n
+    \           </div>\n            \n            <h3 style=\"color:#333; font-size:1.1em;
+    margin:25px 0 15px 0; padding-top:20px; border-top:2px solid #e0e0e0;\">Capacity
+    Provider Settings</h3>\n            <p style=\"color:#666; font-size:0.9em; margin-bottom:15px;\">Configure
+    auto-scaling behavior for ECS tasks</p>\n            \n            <div class=\"form-grid\">\n
+    \               <div class=\"form-group\">\n                    <label>Target
+    Capacity (%) *</label>\n                    <input type=\"number\" id=\"targetCapacity\"
+    value=\"80\" min=\"1\" max=\"100\" required>\n                    <small style=\"color:#999;
+    font-size:0.85em;\">Keep instances at this % utilization</small>\n                </div>\n
+    \               <div class=\"form-group\">\n                    <label>Max Scaling
+    Step *</label>\n                    <input type=\"number\" id=\"maxScalingStep\"
+    value=\"10\" min=\"1\" max=\"100\" required>\n                    <small style=\"color:#999;
+    font-size:0.85em;\">Max instances to add at once</small>\n                </div>\n
+    \               <div class=\"form-group\">\n                    <label>Min Scaling
+    Step *</label>\n                    <input type=\"number\" id=\"minScalingStep\"
+    value=\"1\" min=\"1\" max=\"10\" required>\n                    <small style=\"color:#999;
+    font-size:0.85em;\">Min instances to add at once</small>\n                </div>\n
+    \           </div>\n            \n            <div class=\"form-group\" style=\"margin-top:10px;\">\n
+    \               <label>Termination Protection</label>\n                <select
+    id=\"terminationProtection\">\n                    <option value=\"DISABLED\">Disabled
+    (Allow scale-down)</option>\n                    <option value=\"ENABLED\">Enabled
+    (Prevent termination)</option>\n                </select>\n            </div>\n
+    \           \n            <button onclick=\"createASG()\" class=\"btn btn-primary\"
+    style=\"margin-top:20px;\">\U0001F680 Create ASG via GitOps</button>\n            \n
+    \           <div id=\"asgProgress\" style=\"display:none; margin-top:20px; padding:20px;
+    background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius:10px;
+    color:white;\">\n                <h4 style=\"margin-bottom:10px;\">⏳ Creating
+    Auto Scaling Group...</h4>\n                <div id=\"asgStatus\" style=\"font-size:1.1em;
+    font-weight:500;\"></div>\n                <div style=\"margin-top:10px; font-size:0.9em;
+    opacity:0.9;\">\U0001F552 This may take 2-5 minutes. Progress updates every 5
+    seconds.</div>\n            </div>\n        </div>\n        \n        <div class=\"card\">\n
+    \           <h2>\U0001F5D1️ Delete Auto Scaling Group</h2>\n            <p style=\"color:#666;
+    margin-bottom:20px;\">Remove existing ASGs and terminate all EC2 instances.</p>\n
+    \           <div style=\"display:flex; gap:10px; align-items:flex-end;\">\n                <div
+    class=\"form-group\" style=\"flex:1;\">\n                    <label>Select ASG
+    to Delete</label>\n                    <select id=\"asgDeleteChoice\" style=\"width:100%;\">\n
+    \                       <option value=\"\">Loading ASGs...</option>\n                    </select>\n
+    \               </div>\n                <button onclick=\"deleteASG()\" class=\"btn
+    btn-delete\" style=\"padding:12px 24px;\">\U0001F5D1️ Delete ASG</button>\n            </div>\n
+    \       </div>\n    </div>\n    \n    <div id=\"editModal\" style=\"display:none;
+    position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7);
+    z-index:1000; align-items:center; justify-content:center;\">\n        <div style=\"background:white;
+    border-radius:20px; padding:40px; max-width:500px; width:90%; box-shadow:0 20px
+    60px rgba(0,0,0,0.5);\">\n            <h2 style=\"margin-bottom:20px; color:#333;\">✏️
+    Edit Cluster Settings</h2>\n            <p style=\"color:#666; margin-bottom:20px;\">Cluster:
+    <strong id=\"editClusterName\"></strong></p>\n            <div class=\"form-group\">\n
+    \               <label>Container Insights</label>\n                <select id=\"editInsights\"
+    style=\"width:100%;\">\n                    <option value=\"disabled\">Disabled
+    (Free)</option>\n                    <option value=\"enabled\">Enabled (Paid)</option>\n
+    \               </select>\n            </div>\n            <div style=\"display:flex;
+    gap:10px; margin-top:30px;\">\n                <button onclick=\"applyEdit()\"
+    class=\"btn btn-primary\" style=\"flex:1;\">✔️ Apply Changes</button>\n                <button
+    onclick=\"closeEditModal()\" class=\"btn\" style=\"flex:1; background:#e0e0e0;
+    color:#333;\">❌ Cancel</button>\n            </div>\n        </div>\n    </div>\n
+    \   \n    <script>\n        async function loadClusters() {\n            const
+    list = document.getElementById('clustersList');\n            list.innerHTML =
+    '<div class=\"empty-state\"><div class=\"loading\"></div> Refreshing clusters...</div>';\n
+    \           \n            try {\n                const response = await fetch('/api/ecs/list');\n
+    \               const data = await response.json();\n                \n                if
+    (data.clusters && data.clusters.length > 0) {\n                    list.innerHTML
+    = '<table><thead><tr><th>Cluster Name</th><th>Status</th><th>Running Tasks</th><th>Pending
+    Tasks</th><th>Actions</th></tr></thead><tbody>' +\n                        data.clusters.map(c
+    => `<tr><td><strong>${c.name}</strong></td><td>${c.status}</td><td>${c.runningTasks}</td><td>${c.pendingTasks}</td><td><div
+    class=\"actions\"><button onclick=\"editCluster('${c.name}')\" class=\"btn btn-edit\">✏️
+    Edit</button><button onclick=\"deleteCluster('${c.name}')\" class=\"btn btn-delete\">\U0001F5D1️
+    Delete</button></div></td></tr>`).join('') +\n                        '</tbody></table>';\n
+    \               } else {\n                    list.innerHTML = '<div class=\"empty-state\">\U0001F4E6
+    No clusters found. Create your first cluster below!</div>';\n                }\n
+    \           } catch (error) {\n                list.innerHTML = '<p style=\"color:red;\">Error
+    loading clusters</p>';\n            }\n        }\n        \n        window.onload
+    = () => {\n            loadClusters();\n            loadASGs();\n        };\n
+    \       \n        let asgData = [];\n        \n        async function loadASGs()
+    {\n            try {\n                const response = await fetch('/api/asg/list');\n
+    \               const data = await response.json();\n                asgData =
+    data.asgs || [];\n                const select = document.getElementById('asgChoice');\n
+    \               const deleteSelect = document.getElementById('asgDeleteChoice');\n
+    \               \n                if (asgData.length > 0) {\n                    const
+    options = asgData.map(a => `<option value=\"${a.name}\">${a.name} (${a.instances}
+    instances)</option>`).join('');\n                    select.innerHTML = '<option
+    value=\"\">-- Select Existing ASG --</option>' + options;\n                    deleteSelect.innerHTML
+    = '<option value=\"\">-- Select ASG to Delete --</option>' + options;\n                    select.onchange
+    = () => fillCapacityProviderSettings();\n                } else {\n                    select.innerHTML
+    = '<option value=\"\">No ASGs available - Create one below</option>';\n                    deleteSelect.innerHTML
+    = '<option value=\"\">No ASGs available</option>';\n                }\n                \n
+    \           } catch (error) {\n                const select = document.getElementById('asgChoice');\n
+    \               const deleteSelect = document.getElementById('asgDeleteChoice');\n
+    \               select.innerHTML = '<option value=\"\">⚠️ Error loading ASGs</option>';\n
+    \               deleteSelect.innerHTML = '<option value=\"\">⚠️ Error loading
+    ASGs</option>';\n            }\n        }\n        \n        function fillCapacityProviderSettings()
+    {\n            const asgName = document.getElementById('asgChoice').value;\n            const
+    asg = asgData.find(a => a.name === asgName);\n            if (asg) {\n                document.getElementById('clusterTargetCapacity').value
+    = asg.targetCapacity;\n                document.getElementById('clusterMaxScalingStep').value
+    = asg.maxScalingStep;\n                document.getElementById('clusterMinScalingStep').value
+    = asg.minScalingStep;\n                document.getElementById('clusterTerminationProtection').value
+    = asg.terminationProtection;\n            }\n        }\n        \n        function
+    toggleASGSection() {\n            const provider = document.getElementById('capacityProvider').value;\n
+    \           const section = document.getElementById('asgSection');\n            \n
+    \           if (provider === 'EC2') {\n                section.style.display =
+    'block';\n                loadASGs();\n            } else {\n                section.style.display
+    = 'none';\n            }\n        }\n        \n        async function createASG()
+    {\n            const asgName = document.getElementById('asgName').value;\n            const
+    instanceType = document.getElementById('instanceType').value;\n            const
+    minSize = document.getElementById('minSize').value;\n            const maxSize
+    = document.getElementById('maxSize').value;\n            const desiredCapacity
+    = document.getElementById('desiredCapacity').value;\n            const targetCapacity
+    = document.getElementById('targetCapacity').value;\n            const maxScalingStep
+    = document.getElementById('maxScalingStep').value;\n            const minScalingStep
+    = document.getElementById('minScalingStep').value;\n            const terminationProtection
+    = document.getElementById('terminationProtection').value;\n            const clusterName
+    = 'temp-cluster';\n            \n            if (!asgName) {\n                showAlert('Please
+    enter ASG name', 'error');\n                return;\n            }\n            if
+    (!targetCapacity || !maxScalingStep || !minScalingStep) {\n                showAlert('Please
+    fill in all capacity provider settings', 'error');\n                return;\n
+    \           }\n            \n            try {\n                const response
+    = await fetch('/api/asg/create', {\n                    method: 'POST',\n                    headers:
+    {'Content-Type': 'application/json'},\n                    body: JSON.stringify({\n
+    \                       asgName, instanceType, minSize, maxSize, desiredCapacity,
+    clusterName,\n                        targetCapacity, maxScalingStep, minScalingStep,
+    terminationProtection\n                    })\n                });\n                \n
+    \               const data = await response.json();\n                \n                if
+    (response.ok) {\n                    showAlert('ASG creation started! Tracking
+    progress...', 'success');\n                    document.getElementById('asgProgress').style.display
+    = 'block';\n                    trackASGCreation(asgName);\n                }
+    else {\n                    showAlert('Error: ' + data.error, 'error');\n                }\n
+    \           } catch (error) {\n                showAlert('Error: ' + error.message,
+    'error');\n            }\n        }\n        \n        async function trackASGCreation(asgName)
+    {\n            const statusDiv = document.getElementById('asgStatus');\n            let
+    attempts = 0;\n            const maxAttempts = 60;\n            let lastCheck
+    = Date.now();\n            \n            statusDiv.innerHTML = '⏳ Step 1/4: Triggering
+    GitHub Actions workflow...';\n            \n            const interval = setInterval(async
+    () => {\n                attempts++;\n                \n                try {\n
+    \                   const response = await fetch(`/api/asg/status/${asgName}`);\n
+    \                   const data = await response.json();\n                    \n
+    \                   if (data.status === 'active') {\n                        statusDiv.innerHTML
+    = `✅ ASG Created Successfully!<br>Instances: ${data.instances}/${data.desired}
+    running`;\n                        clearInterval(interval);\n                        showAlert(`ASG
+    \"${asgName}\" is ready! Refreshing list...`, 'success');\n                        setTimeout(()
+    => {\n                            loadASGs();\n                            document.getElementById('asgProgress').style.display
+    = 'none';\n                            document.getElementById('asgName').value
+    = '';\n                        }, 2000);\n                    } else {\n                        const
+    step = attempts < 10 ? '2/4: Building terraform config...' : \n                                   attempts
+    < 30 ? '3/4: Creating AWS resources...' : \n                                   '4/4:
+    Launching EC2 instances...';\n                        statusDiv.innerHTML = `⏳
+    ${step}<br>Progress: ${attempts}/${maxAttempts} checks`;\n                    }\n
+    \                   \n                    // Check if workflow failed (no ASG
+    after 2 minutes)\n                    if (attempts > 24 && data.status === 'creating')
+    {\n                        statusDiv.innerHTML = '❌ ASG Creation Failed!<br>Check
+    <a href=\"https://github.com/alonsalasi/Platform-Engineer-test/actions\" target=\"_blank\"
+    style=\"color:white; text-decoration:underline;\">GitHub Actions</a> for error
+    details.';\n                        clearInterval(interval);\n                        showAlert('ASG
+    creation failed. Check GitHub Actions logs.', 'error');\n                        document.getElementById('asgProgress').style.display
+    = 'none';\n                    }\n                    \n                    if
+    (attempts >= maxAttempts) {\n                        statusDiv.innerHTML = '⚠️
+    Timeout reached. Check <a href=\"https://github.com/alonsalasi/Platform-Engineer-test/actions\"
+    target=\"_blank\" style=\"color:white; text-decoration:underline;\">GitHub Actions</a>
+    for status.';\n                        clearInterval(interval);\n                        showAlert('ASG
+    creation timeout. Check GitHub Actions.', 'error');\n                    }\n                }
+    catch (error) {\n                    statusDiv.innerHTML = `⏳ Waiting for ASG
+    creation...<br>Check ${attempts}/${maxAttempts}`;\n                }\n            },
+    5000);\n        }\n        \n        function editCluster(clusterName) {\n            document.getElementById('editClusterName').textContent
+    = clusterName;\n            document.getElementById('editModal').style.display
+    = 'flex';\n        }\n        \n        function closeEditModal() {\n            document.getElementById('editModal').style.display
+    = 'none';\n        }\n        \n        async function applyEdit() {\n            const
+    clusterName = document.getElementById('editClusterName').textContent;\n            const
+    insights = document.getElementById('editInsights').value;\n            \n            closeEditModal();\n
+    \           \n            try {\n                const response = await fetch('/api/ecs/update',
+    {\n                    method: 'POST',\n                    headers: {'Content-Type':
+    'application/json'},\n                    body: JSON.stringify({clusterName, containerInsights:
+    insights})\n                });\n                \n                const data
+    = await response.json();\n                \n                if (response.ok) {\n
+    \                   showAlert('Update triggered! Check GitHub for progress', 'success');\n
+    \                   setTimeout(loadClusters, 3000);\n                } else {\n
+    \                   showAlert('Error: ' + data.error, 'error');\n                }\n
+    \           } catch (error) {\n                showAlert('Failed to update cluster',
+    'error');\n            }\n        }\n        \n        function showAlert(message,
+    type) {\n            const alerts = document.getElementById('alerts');\n            const
+    alert = document.createElement('div');\n            alert.className = `alert alert-${type}`;\n
+    \           alert.textContent = message;\n            alerts.appendChild(alert);\n
+    \           setTimeout(() => alert.remove(), 5000);\n        }\n        \n        async
+    function createCluster() {\n            const clusterName = document.getElementById('clusterName').value;\n
+    \           const capacityProvider = document.getElementById('capacityProvider').value;\n
+    \           const containerInsights = document.getElementById('containerInsights').value;\n
+    \           \n            if (!clusterName) {\n                showAlert('Please
+    enter a cluster name', 'error');\n                return;\n            }\n            \n
+    \           let payload = {clusterName, capacityProvider, containerInsights};\n
+    \           \n            if (capacityProvider === 'EC2') {\n                const
+    asgChoice = document.getElementById('asgChoice').value;\n                if (!asgChoice)
+    {\n                    showAlert('Please create or select an ASG before creating
+    EC2 cluster', 'error');\n                    return;\n                }\n                const
+    targetCap = document.getElementById('clusterTargetCapacity').value;\n                const
+    maxStep = document.getElementById('clusterMaxScalingStep').value;\n                const
+    minStep = document.getElementById('clusterMinScalingStep').value;\n                const
+    termProt = document.getElementById('clusterTerminationProtection').value;\n                \n
+    \               if (!targetCap || !maxStep || !minStep) {\n                    showAlert('Please
+    fill in all capacity provider settings for EC2 cluster', 'error');\n                    return;\n
+    \               }\n                \n                payload.asgName = asgChoice;\n
+    \               payload.targetCapacity = targetCap;\n                payload.maxScalingStep
+    = maxStep;\n                payload.minScalingStep = minStep;\n                payload.terminationProtection
+    = termProt;\n            }\n            \n            try {\n                const
+    response = await fetch('/api/ecs/create', {\n                    method: 'POST',\n
+    \                   headers: {'Content-Type': 'application/json'},\n                    body:
+    JSON.stringify(payload)\n                });\n                \n                const
+    data = await response.json();\n                \n                if (response.ok)
+    {\n                    showAlert('GitHub Actions triggered! Check GitHub for progress
+    (2-5 min)', 'success');\n                    document.getElementById('clusterName').value
+    = '';\n                    setTimeout(loadClusters, 3000);\n                }
+    else {\n                    showAlert('Error: ' + data.error, 'error');\n                }\n
+    \           } catch (error) {\n                showAlert('Error: ' + error.message,
+    'error');\n            }\n        }\n        \n        async function deleteASG()
+    {\n            const asgName = document.getElementById('asgDeleteChoice').value;\n
+    \           \n            if (!asgName) {\n                showAlert('Please select
+    an ASG to delete', 'error');\n                return;\n            }\n            \n
+    \           if (!confirm(`Are you sure you want to delete ASG \"${asgName}\"?\\n\\nThis
+    will terminate all EC2 instances in the group.\\n\\nThis action cannot be undone.`))
+    {\n                return;\n            }\n            \n            try {\n                const
+    response = await fetch('/api/asg/delete', {\n                    method: 'POST',\n
+    \                   headers: {'Content-Type': 'application/json'},\n                    body:
+    JSON.stringify({asgName})\n                });\n                \n                const
+    data = await response.json();\n                \n                if (response.ok)
+    {\n                    showAlert('ASG deletion triggered! Check GitHub for progress',
+    'success');\n                    setTimeout(loadASGs, 3000);\n                }
+    else {\n                    showAlert('Error: ' + data.error, 'error');\n                }\n
+    \           } catch (error) {\n                showAlert('Error: ' + error.message,
+    'error');\n            }\n        }\n        \n        async function deleteCluster(clusterName)
+    {\n            if (!confirm(`Are you sure you want to delete cluster \"${clusterName}\"?\\n\\nThis
+    action cannot be undone.`)) {\n                return;\n            }\n            \n
+    \           try {\n                const response = await fetch('/api/ecs/delete',
+    {\n                    method: 'POST',\n                    headers: {'Content-Type':
+    'application/json'},\n                    body: JSON.stringify({clusterName})\n
+    \               });\n                \n                const data = await response.json();\n
+    \               \n                if (response.ok) {\n                    showAlert('Cluster
+    deletion triggered! Check GitHub for progress', 'success');\n                    setTimeout(loadClusters,
+    3000);\n                } else {\n                    showAlert('Error: ' + data.error,
+    'error');\n                }\n            } catch (error) {\n                showAlert('Error:
+    ' + error.message, 'error');\n            }\n        }\n    </script>\n</body>\n</html>\n"
+  server.py: "from http.server import HTTPServer, BaseHTTPRequestHandler\nimport json\nimport
+    os\nimport requests\n\nGITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')\nGITHUB_REPO
+    = os.environ.get('GITHUB_REPO')\n\nclass ECSManagerHandler(BaseHTTPRequestHandler):\n
+    \   def do_GET(self):\n        if self.path == '/':\n            self.send_response(200)\n
+    \           self.send_header('Content-type', 'text/html')\n            self.end_headers()\n
+    \           with open('/app/index.html', 'rb') as f:\n                self.wfile.write(f.read())\n
+    \       elif self.path == '/health':\n            self.send_response(200)\n            self.send_header('Content-type',
+    'application/json')\n            self.end_headers()\n            self.wfile.write(json.dumps({'status':
+    'healthy'}).encode())\n        elif self.path == '/api/ecs/list':\n            import
+    boto3\n            try:\n                ecs = boto3.client('ecs', region_name='us-east-1')\n
+    \               response = ecs.list_clusters()\n                clusters = []\n
+    \               for arn in response.get('clusterArns', []):\n                    name
+    = arn.split('/')[-1]\n                    desc = ecs.describe_clusters(clusters=[arn])['clusters'][0]\n
+    \                   clusters.append({\n                        'name': name,\n
+    \                       'status': desc['status'],\n                        'runningTasks':
+    desc['runningTasksCount'],\n                        'pendingTasks': desc['pendingTasksCount']\n
+    \                   })\n                self.send_response(200)\n                self.send_header('Content-type',
+    'application/json')\n                self.end_headers()\n                self.wfile.write(json.dumps({'clusters':
+    clusters}).encode())\n            except Exception as e:\n                self.send_response(500)\n
+    \               self.send_header('Content-type', 'application/json')\n                self.end_headers()\n
+    \               self.wfile.write(json.dumps({'error': str(e)}).encode())\n        elif
+    self.path == '/api/asg/list':\n            import boto3\n            try:\n                asg
+    = boto3.client('autoscaling', region_name='us-east-1')\n                response
+    = asg.describe_auto_scaling_groups()\n                groups = []\n                for
+    group in response.get('AutoScalingGroups', []):\n                    tags = {tag['Key']:
+    tag['Value'] for tag in group.get('Tags', [])}\n                    groups.append({\n
+    \                       'name': group['AutoScalingGroupName'],\n                        'minSize':
+    group['MinSize'],\n                        'maxSize': group['MaxSize'],\n                        'desiredCapacity':
+    group['DesiredCapacity'],\n                        'instances': len(group['Instances']),\n
+    \                       'targetCapacity': tags.get('CapacityProviderTargetCapacity',
+    '80'),\n                        'maxScalingStep': tags.get('CapacityProviderMaxScalingStep',
+    '10'),\n                        'minScalingStep': tags.get('CapacityProviderMinScalingStep',
+    '1'),\n                        'terminationProtection': tags.get('CapacityProviderTerminationProtection',
+    'DISABLED')\n                    })\n                self.send_response(200)\n
+    \               self.send_header('Content-type', 'application/json')\n                self.end_headers()\n
+    \               self.wfile.write(json.dumps({'asgs': groups}).encode())\n            except
+    Exception as e:\n                self.send_response(500)\n                self.send_header('Content-type',
+    'application/json')\n                self.end_headers()\n                self.wfile.write(json.dumps({'error':
+    str(e)}).encode())\n        elif self.path.startswith('/api/asg/status/'):\n            import
+    boto3\n            asg_name = self.path.split('/')[-1]\n            try:\n                asg
+    = boto3.client('autoscaling', region_name='us-east-1')\n                response
+    = asg.describe_auto_scaling_groups(AutoScalingGroupNames=[asg_name])\n                if
+    response['AutoScalingGroups']:\n                    group = response['AutoScalingGroups'][0]\n
+    \                   self.send_response(200)\n                    self.send_header('Content-type',
+    'application/json')\n                    self.end_headers()\n                    self.wfile.write(json.dumps({\n
+    \                       'status': 'active',\n                        'instances':
+    len(group['Instances']),\n                        'desired': group['DesiredCapacity']\n
+    \                   }).encode())\n                else:\n                    self.send_response(200)\n
+    \                   self.send_header('Content-type', 'application/json')\n                    self.end_headers()\n
+    \                   self.wfile.write(json.dumps({'status': 'creating'}).encode())\n
+    \           except Exception as e:\n                self.send_response(200)\n
+    \               self.send_header('Content-type', 'application/json')\n                self.end_headers()\n
+    \               self.wfile.write(json.dumps({'status': 'creating'}).encode())\n
+    \       else:\n            self.send_response(404)\n            self.end_headers()\n
+    \   \n    def do_POST(self):\n        if self.path == '/api/asg/create':\n            content_length
+    = int(self.headers['Content-Length'])\n            body = self.rfile.read(content_length)\n
+    \           data = json.loads(body.decode())\n            \n            webhook_url
+    = f'https://api.github.com/repos/{GITHUB_REPO}/dispatches'\n            payload
+    = {\n                'event_type': 'create-asg',\n                'client_payload':
+    {\n                    'asgName': data.get('asgName'),\n                    'instanceType':
+    data.get('instanceType'),\n                    'minSize': data.get('minSize'),\n
+    \                   'maxSize': data.get('maxSize'),\n                    'desiredCapacity':
+    data.get('desiredCapacity'),\n                    'clusterName': data.get('clusterName'),\n
+    \                   'targetCapacity': data.get('targetCapacity'),\n                    'maxScalingStep':
+    data.get('maxScalingStep'),\n                    'minScalingStep': data.get('minScalingStep'),\n
+    \                   'terminationProtection': data.get('terminationProtection')\n
+    \               }\n            }\n            \n            response = requests.post(\n
+    \               webhook_url,\n                headers={\n                    'Authorization':
+    f'token {GITHUB_TOKEN}',\n                    'Accept': 'application/vnd.github.v3+json'\n
+    \               },\n                json=payload\n            )\n            \n
+    \           if response.status_code == 204:\n                self.send_response(200)\n
+    \               self.send_header('Content-type', 'application/json')\n                self.end_headers()\n
+    \               self.wfile.write(json.dumps({\n                    'message':
+    'ASG creation triggered',\n                    'status': 'pending'\n                }).encode())\n
+    \           else:\n                print(f'GitHub API Error: {response.status_code}
+    - {response.text}')\n                self.send_response(500)\n                self.send_header('Content-type',
+    'application/json')\n                self.end_headers()\n                self.wfile.write(json.dumps({\n
+    \                   'error': f'GitHub API {response.status_code}: {response.text}'\n
+    \               }).encode())\n        \n        elif self.path == '/api/asg/delete':\n
+    \           content_length = int(self.headers['Content-Length'])\n            body
+    = self.rfile.read(content_length)\n            data = json.loads(body.decode())\n
+    \           \n            webhook_url = f'https://api.github.com/repos/{GITHUB_REPO}/dispatches'\n
+    \           payload = {\n                'event_type': 'delete-asg',\n                'client_payload':
+    {\n                    'asgName': data.get('asgName'),\n                    'user':
+    'k8s-platform'\n                }\n            }\n            \n            response
+    = requests.post(\n                webhook_url,\n                headers={\n                    'Authorization':
+    f'token {GITHUB_TOKEN}',\n                    'Accept': 'application/vnd.github.v3+json'\n
+    \               },\n                json=payload\n            )\n            \n
+    \           if response.status_code == 204:\n                self.send_response(200)\n
+    \               self.send_header('Content-type', 'application/json')\n                self.end_headers()\n
+    \               self.wfile.write(json.dumps({\n                    'message':
+    'ASG deletion triggered',\n                    'status': 'pending'\n                }).encode())\n
+    \           else:\n                print(f'GitHub API Error: {response.status_code}
+    - {response.text}')\n                self.send_response(500)\n                self.send_header('Content-type',
+    'application/json')\n                self.end_headers()\n                self.wfile.write(json.dumps({\n
+    \                   'error': f'GitHub API {response.status_code}: {response.text}'\n
+    \               }).encode())\n        \n        elif self.path == '/api/ecs/create':\n
+    \           content_length = int(self.headers['Content-Length'])\n            body
+    = self.rfile.read(content_length)\n            data = json.loads(body.decode())\n
+    \           \n            # Trigger GitHub Actions\n            webhook_url =
+    f'https://api.github.com/repos/{GITHUB_REPO}/dispatches'\n            payload
+    = {\n                'event_type': 'create-ecs-cluster',\n                'client_payload':
+    {\n                    'clusterName': data.get('clusterName'),\n                    'capacityProvider':
+    data.get('capacityProvider'),\n                    'containerInsights': data.get('containerInsights'),\n
+    \                   'asgName': data.get('asgName'),\n                    'targetCapacity':
+    data.get('targetCapacity'),\n                    'maxScalingStep': data.get('maxScalingStep'),\n
+    \                   'minScalingStep': data.get('minScalingStep'),\n                    'terminationProtection':
+    data.get('terminationProtection')\n                }\n            }\n            \n
+    \           response = requests.post(\n                webhook_url,\n                headers={\n
+    \                   'Authorization': f'token {GITHUB_TOKEN}',\n                    'Accept':
+    'application/vnd.github.v3+json'\n                },\n                json=payload\n
+    \           )\n            \n            if response.status_code == 204:\n                self.send_response(200)\n
+    \               self.send_header('Content-type', 'application/json')\n                self.end_headers()\n
+    \               self.wfile.write(json.dumps({\n                    'message':
+    'GitHub Actions triggered',\n                    'status': 'pending'\n                }).encode())\n
+    \           else:\n                print(f'GitHub API Error: {response.status_code}
+    - {response.text}')\n                self.send_response(500)\n                self.send_header('Content-type',
+    'application/json')\n                self.end_headers()\n                self.wfile.write(json.dumps({\n
+    \                   'error': f'GitHub API {response.status_code}: {response.text}'\n
+    \               }).encode())\n        \n        elif self.path == '/api/ecs/update':\n
+    \           content_length = int(self.headers['Content-Length'])\n            body
+    = self.rfile.read(content_length)\n            data = json.loads(body.decode())\n
+    \           \n            # Trigger GitHub Actions\n            webhook_url =
+    f'https://api.github.com/repos/{GITHUB_REPO}/dispatches'\n            payload
+    = {\n                'event_type': 'update-ecs-cluster',\n                'client_payload':
+    {\n                    'clusterName': data.get('clusterName'),\n                    'containerInsights':
+    data.get('containerInsights'),\n                    'user': 'k8s-platform'\n                }\n
+    \           }\n            \n            response = requests.post(\n                webhook_url,\n
+    \               headers={\n                    'Authorization': f'token {GITHUB_TOKEN}',\n
+    \                   'Accept': 'application/vnd.github.v3+json'\n                },\n
+    \               json=payload\n            )\n            \n            if response.status_code
+    == 204:\n                self.send_response(200)\n                self.send_header('Content-type',
+    'application/json')\n                self.end_headers()\n                self.wfile.write(json.dumps({\n
+    \                   'message': 'GitHub Actions triggered',\n                    'status':
+    'pending'\n                }).encode())\n            else:\n                print(f'GitHub
+    API Error: {response.status_code} - {response.text}')\n                self.send_response(500)\n
+    \               self.send_header('Content-type', 'application/json')\n                self.end_headers()\n
+    \               self.wfile.write(json.dumps({\n                    'error': f'GitHub
+    API {response.status_code}: {response.text}'\n                }).encode())\n        \n
+    \       elif self.path == '/api/ecs/delete':\n            content_length = int(self.headers['Content-Length'])\n
+    \           body = self.rfile.read(content_length)\n            data = json.loads(body.decode())\n
+    \           \n            # Trigger GitHub Actions\n            webhook_url =
+    f'https://api.github.com/repos/{GITHUB_REPO}/dispatches'\n            payload
+    = {\n                'event_type': 'delete-ecs-cluster',\n                'client_payload':
+    {\n                    'clusterName': data.get('clusterName'),\n                    'user':
+    'k8s-platform'\n                }\n            }\n            \n            response
+    = requests.post(\n                webhook_url,\n                headers={\n                    'Authorization':
+    f'token {GITHUB_TOKEN}',\n                    'Accept': 'application/vnd.github.v3+json'\n
+    \               },\n                json=payload\n            )\n            \n
+    \           if response.status_code == 204:\n                self.send_response(200)\n
+    \               self.send_header('Content-type', 'application/json')\n                self.end_headers()\n
+    \               self.wfile.write(json.dumps({\n                    'message':
+    'GitHub Actions triggered',\n                    'status': 'pending'\n                }).encode())\n
+    \           else:\n                self.send_response(500)\n                self.send_header('Content-type',
+    'application/json')\n                self.end_headers()\n                self.wfile.write(json.dumps({\n
+    \                   'error': 'Failed to trigger GitHub Actions'\n                }).encode())\n
+    \       else:\n            self.send_response(404)\n            self.end_headers()\n\nif
+    __name__ == '__main__':\n    server = HTTPServer(('0.0.0.0', 8080), ECSManagerHandler)\n
+    \   print('ECS Manager running on port 8080...')\n    server.serve_forever()\n"
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: "{\"apiVersion\":\"v1\",\"data\":{\"index.html\":\"\\u003c!DOCTYPE
+      html\\u003e\\n\\u003chtml\\u003e\\n\\u003chead\\u003e\\n    \\u003cmeta charset=\\\"UTF-8\\\"\\u003e\\n
+      \   \\u003cmeta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1.0\\\"\\u003e\\n
+      \   \\u003ctitle\\u003eECS Platform Manager\\u003c/title\\u003e\\n    \\u003cstyle\\u003e\\n
+      \       * { margin: 0; padding: 0; box-sizing: border-box; }\\n        body
+      {\\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\\n
+      \           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\\n
+      \           min-height: 100vh;\\n            padding: 20px;\\n        }\\n        .container
+      {\\n            max-width: 1200px;\\n            margin: 0 auto;\\n        }\\n
+      \       .header {\\n            background: rgba(255, 255, 255, 0.95);\\n            backdrop-filter:
+      blur(10px);\\n            border-radius: 20px;\\n            padding: 30px;\\n
+      \           margin-bottom: 30px;\\n            box-shadow: 0 20px 60px rgba(0,0,0,0.3);\\n
+      \           display: flex;\\n            justify-content: space-between;\\n
+      \           align-items: center;\\n        }\\n        .header h1 {\\n            font-size:
+      2.5em;\\n            background: linear-gradient(135deg, #667eea 0%, #764ba2
+      100%);\\n            -webkit-background-clip: text;\\n            -webkit-text-fill-color:
+      transparent;\\n            display: flex;\\n            align-items: center;\\n
+      \           gap: 15px;\\n        }\\n        .badge {\\n            background:
+      linear-gradient(135deg, #11998e 0%, #38ef7d 100%);\\n            color: white;\\n
+      \           padding: 8px 16px;\\n            border-radius: 20px;\\n            font-size:
+      0.9em;\\n            font-weight: 600;\\n            box-shadow: 0 4px 15px
+      rgba(17, 153, 142, 0.4);\\n        }\\n        .card {\\n            background:
+      rgba(255, 255, 255, 0.95);\\n            backdrop-filter: blur(10px);\\n            border-radius:
+      20px;\\n            padding: 30px;\\n            margin-bottom: 30px;\\n            box-shadow:
+      0 20px 60px rgba(0,0,0,0.3);\\n            transition: transform 0.3s ease,
+      box-shadow 0.3s ease;\\n        }\\n        .card:hover {\\n            transform:
+      translateY(-5px);\\n            box-shadow: 0 25px 70px rgba(0,0,0,0.4);\\n
+      \       }\\n        .card h2 {\\n            color: #333;\\n            margin-bottom:
+      20px;\\n            font-size: 1.8em;\\n            display: flex;\\n            align-items:
+      center;\\n            gap: 10px;\\n        }\\n        .form-grid {\\n            display:
+      grid;\\n            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));\\n
+      \           gap: 20px;\\n            margin-bottom: 20px;\\n        }\\n        .form-group
+      {\\n            display: flex;\\n            flex-direction: column;\\n        }\\n
+      \       label {\\n            color: #555;\\n            font-weight: 600;\\n
+      \           margin-bottom: 8px;\\n            font-size: 0.9em;\\n            text-transform:
+      uppercase;\\n            letter-spacing: 0.5px;\\n        }\\n        input,
+      select {\\n            padding: 12px 16px;\\n            border: 2px solid #e0e0e0;\\n
+      \           border-radius: 10px;\\n            font-size: 1em;\\n            transition:
+      all 0.3s ease;\\n            background: white;\\n        }\\n        input:focus,
+      select:focus {\\n            outline: none;\\n            border-color: #667eea;\\n
+      \           box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);\\n        }\\n        .btn
+      {\\n            padding: 14px 28px;\\n            border: none;\\n            border-radius:
+      10px;\\n            font-size: 1em;\\n            font-weight: 600;\\n            cursor:
+      pointer;\\n            transition: all 0.3s ease;\\n            text-transform:
+      uppercase;\\n            letter-spacing: 0.5px;\\n            box-shadow: 0
+      4px 15px rgba(0,0,0,0.2);\\n        }\\n        .btn:hover {\\n            transform:
+      translateY(-2px);\\n            box-shadow: 0 6px 20px rgba(0,0,0,0.3);\\n        }\\n
+      \       .btn-primary {\\n            background: linear-gradient(135deg, #667eea
+      0%, #764ba2 100%);\\n            color: white;\\n        }\\n        .btn-refresh
+      {\\n            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);\\n
+      \           color: white;\\n        }\\n        .btn-edit {\\n            background:
+      linear-gradient(135deg, #f093fb 0%, #f5576c 100%);\\n            color: white;\\n
+      \           padding: 8px 16px;\\n            font-size: 0.85em;\\n        }\\n
+      \       .btn-delete {\\n            background: linear-gradient(135deg, #fa709a
+      0%, #fee140 100%);\\n            color: white;\\n            padding: 8px 16px;\\n
+      \           font-size: 0.85em;\\n        }\\n        .alert {\\n            padding:
+      20px 24px;\\n            border-radius: 15px;\\n            margin-bottom: 15px;\\n
+      \           font-weight: 600;\\n            font-size: 1.1em;\\n            animation:
+      slideInBounce 0.5s ease;\\n            box-shadow: 0 8px 30px rgba(0,0,0,0.3);\\n
+      \           border: 3px solid rgba(255,255,255,0.3);\\n            backdrop-filter:
+      blur(10px);\\n        }\\n        @keyframes slideInBounce {\\n            0%
+      { transform: translateX(400px) scale(0.5); opacity: 0; }\\n            60% {
+      transform: translateX(-20px) scale(1.05); opacity: 1; }\\n            100% {
+      transform: translateX(0) scale(1); opacity: 1; }\\n        }\\n        .alert-success
+      {\\n            background: linear-gradient(135deg, #00b894 0%, #00ff88 100%);\\n
+      \           color: white;\\n            text-shadow: 0 2px 4px rgba(0,0,0,0.2);\\n
+      \       }\\n        .alert-error {\\n            background: linear-gradient(135deg,
+      #ff3838 0%, #ff6b6b 100%);\\n            color: white;\\n            text-shadow:
+      0 2px 4px rgba(0,0,0,0.2);\\n        }\\n        table {\\n            width:
+      100%;\\n            border-collapse: separate;\\n            border-spacing:
+      0;\\n            margin-top: 20px;\\n        }\\n        th {\\n            background:
+      linear-gradient(135deg, #667eea 0%, #764ba2 100%);\\n            color: white;\\n
+      \           padding: 16px;\\n            text-align: left;\\n            font-weight:
+      600;\\n            text-transform: uppercase;\\n            font-size: 0.85em;\\n
+      \           letter-spacing: 0.5px;\\n        }\\n        th:first-child { border-radius:
+      10px 0 0 0; }\\n        th:last-child { border-radius: 0 10px 0 0; }\\n        td
+      {\\n            padding: 16px;\\n            border-bottom: 1px solid #f0f0f0;\\n
+      \           background: white;\\n        }\\n        tr:last-child td:first-child
+      { border-radius: 0 0 0 10px; }\\n        tr:last-child td:last-child { border-radius:
+      0 0 10px 0; }\\n        tr:hover td {\\n            background: #f8f9ff;\\n
+      \       }\\n        .actions {\\n            display: flex;\\n            gap:
+      10px;\\n        }\\n        .empty-state {\\n            text-align: center;\\n
+      \           padding: 60px 20px;\\n            color: #999;\\n            font-size:
+      1.2em;\\n        }\\n        .loading {\\n            display: inline-block;\\n
+      \           width: 20px;\\n            height: 20px;\\n            border: 3px
+      solid rgba(255,255,255,0.3);\\n            border-radius: 50%;\\n            border-top-color:
+      white;\\n            animation: spin 1s ease-in-out infinite;\\n        }\\n
+      \       @keyframes spin {\\n            to { transform: rotate(360deg); }\\n
+      \       }\\n    \\u003c/style\\u003e\\n\\u003c/head\\u003e\\n\\u003cbody\\u003e\\n
+      \   \\u003cdiv class=\\\"container\\\"\\u003e\\n        \\u003cdiv class=\\\"header\\\"\\u003e\\n
+      \           \\u003ch1\\u003e\U0001F680 ECS Platform Manager\\u003c/h1\\u003e\\n
+      \           \\u003cspan class=\\\"badge\\\"\\u003eKubernetes IDP\\u003c/span\\u003e\\n
+      \       \\u003c/div\\u003e\\n        \\n        \\u003cdiv id=\\\"alerts\\\"
+      style=\\\"position:fixed; top:20px; right:20px; z-index:2000; max-width:400px;\\\"\\u003e\\u003c/div\\u003e\\n
+      \       \\n        \\u003cdiv class=\\\"card\\\"\\u003e\\n            \\u003ch2\\u003e\U0001F4CA
+      Active Clusters\\u003c/h2\\u003e\\n            \\u003cbutton onclick=\\\"loadClusters()\\\"
+      class=\\\"btn btn-refresh\\\"\\u003e\U0001F504 Refresh\\u003c/button\\u003e\\n
+      \           \\u003cdiv id=\\\"clustersList\\\"\\u003e\\u003c/div\\u003e\\n        \\u003c/div\\u003e\\n
+      \       \\n        \\u003cdiv class=\\\"card\\\"\\u003e\\n            \\u003ch2\\u003e➕
+      Create ECS Cluster\\u003c/h2\\u003e\\n            \\u003cdiv class=\\\"form-grid\\\"\\u003e\\n
+      \               \\u003cdiv class=\\\"form-group\\\"\\u003e\\n                    \\u003clabel\\u003eCluster
+      Name\\u003c/label\\u003e\\n                    \\u003cinput type=\\\"text\\\"
+      id=\\\"clusterName\\\" placeholder=\\\"my-production-cluster\\\"\\u003e\\n                \\u003c/div\\u003e\\n
+      \               \\u003cdiv class=\\\"form-group\\\"\\u003e\\n                    \\u003clabel\\u003eCapacity
+      Provider\\u003c/label\\u003e\\n                    \\u003cselect id=\\\"capacityProvider\\\"
+      onchange=\\\"toggleASGSection()\\\"\\u003e\\n                        \\u003coption
+      value=\\\"FARGATE\\\"\\u003eAWS Fargate\\u003c/option\\u003e\\n                        \\u003coption
+      value=\\\"FARGATE_SPOT\\\"\\u003eFargate Spot\\u003c/option\\u003e\\n                        \\u003coption
+      value=\\\"EC2\\\"\\u003eEC2 Instances\\u003c/option\\u003e\\n                    \\u003c/select\\u003e\\n
+      \               \\u003c/div\\u003e\\n                \\u003cdiv class=\\\"form-group\\\"\\u003e\\n
+      \                   \\u003clabel\\u003eContainer Insights\\u003c/label\\u003e\\n
+      \                   \\u003cselect id=\\\"containerInsights\\\"\\u003e\\n                        \\u003coption
+      value=\\\"disabled\\\"\\u003eDisabled (Free)\\u003c/option\\u003e\\n                        \\u003coption
+      value=\\\"enabled\\\"\\u003eEnabled (Paid)\\u003c/option\\u003e\\n                    \\u003c/select\\u003e\\n
+      \               \\u003c/div\\u003e\\n            \\u003c/div\\u003e\\n            \\n
+      \           \\u003cdiv id=\\\"asgSection\\\" style=\\\"display:none; margin-top:20px;\\\"\\u003e\\n
+      \               \\u003cdiv class=\\\"form-group\\\"\\u003e\\n                    \\u003clabel\\u003eSelect
+      Auto Scaling Group\\u003c/label\\u003e\\n                    \\u003cselect id=\\\"asgChoice\\\"
+      style=\\\"width:100%;\\\"\\u003e\\n                        \\u003coption value=\\\"\\\"\\u003eLoading
+      ASGs...\\u003c/option\\u003e\\n                    \\u003c/select\\u003e\\n
+      \                   \\u003cbutton onclick=\\\"loadASGs()\\\" class=\\\"btn btn-refresh\\\"
+      style=\\\"margin-top:10px; padding:8px 16px; font-size:0.9em;\\\"\\u003e\U0001F504
+      Refresh ASG List\\u003c/button\\u003e\\n                \\u003c/div\\u003e\\n
+      \               \\n                \\u003ch3 style=\\\"color:#333; font-size:1.1em;
+      margin:20px 0 15px 0; padding-top:20px; border-top:2px solid #e0e0e0;\\\"\\u003eCapacity
+      Provider Settings *\\u003c/h3\\u003e\\n                \\u003cdiv class=\\\"form-grid\\\"\\u003e\\n
+      \                   \\u003cdiv class=\\\"form-group\\\"\\u003e\\n                        \\u003clabel\\u003eTarget
+      Capacity (%) *\\u003c/label\\u003e\\n                        \\u003cinput type=\\\"number\\\"
+      id=\\\"clusterTargetCapacity\\\" value=\\\"80\\\" min=\\\"1\\\" max=\\\"100\\\"
+      required\\u003e\\n                    \\u003c/div\\u003e\\n                    \\u003cdiv
+      class=\\\"form-group\\\"\\u003e\\n                        \\u003clabel\\u003eMax
+      Scaling Step *\\u003c/label\\u003e\\n                        \\u003cinput type=\\\"number\\\"
+      id=\\\"clusterMaxScalingStep\\\" value=\\\"10\\\" min=\\\"1\\\" max=\\\"100\\\"
+      required\\u003e\\n                    \\u003c/div\\u003e\\n                    \\u003cdiv
+      class=\\\"form-group\\\"\\u003e\\n                        \\u003clabel\\u003eMin
+      Scaling Step *\\u003c/label\\u003e\\n                        \\u003cinput type=\\\"number\\\"
+      id=\\\"clusterMinScalingStep\\\" value=\\\"1\\\" min=\\\"1\\\" max=\\\"10\\\"
+      required\\u003e\\n                    \\u003c/div\\u003e\\n                \\u003c/div\\u003e\\n
+      \               \\u003cdiv class=\\\"form-group\\\" style=\\\"margin-top:10px;\\\"\\u003e\\n
+      \                   \\u003clabel\\u003eTermination Protection *\\u003c/label\\u003e\\n
+      \                   \\u003cselect id=\\\"clusterTerminationProtection\\\" required\\u003e\\n
+      \                       \\u003coption value=\\\"DISABLED\\\"\\u003eDisabled
+      (Allow scale-down)\\u003c/option\\u003e\\n                        \\u003coption
+      value=\\\"ENABLED\\\"\\u003eEnabled (Prevent termination)\\u003c/option\\u003e\\n
+      \                   \\u003c/select\\u003e\\n                \\u003c/div\\u003e\\n
+      \           \\u003c/div\\u003e\\n            \\n            \\u003cbutton onclick=\\\"createCluster()\\\"
+      class=\\\"btn btn-primary\\\" style=\\\"margin-top:20px;\\\"\\u003e\U0001F680
+      Deploy Cluster via GitOps\\u003c/button\\u003e\\n        \\u003c/div\\u003e\\n
+      \       \\n        \\u003cdiv class=\\\"card\\\"\\u003e\\n            \\u003ch2\\u003e➕
+      Create Auto Scaling Group\\u003c/h2\\u003e\\n            \\u003cp style=\\\"color:#666;
+      margin-bottom:20px;\\\"\\u003eCreate ASGs for EC2-based ECS clusters.\\u003c/p\\u003e\\n
+      \           \\n            \\u003cdiv class=\\\"form-grid\\\"\\u003e\\n                \\u003cdiv
+      class=\\\"form-group\\\"\\u003e\\n                    \\u003clabel\\u003eASG
+      Name\\u003c/label\\u003e\\n                    \\u003cinput type=\\\"text\\\"
+      id=\\\"asgName\\\" placeholder=\\\"my-ecs-asg\\\"\\u003e\\n                \\u003c/div\\u003e\\n
+      \               \\u003cdiv class=\\\"form-group\\\"\\u003e\\n                    \\u003clabel\\u003eInstance
+      Type\\u003c/label\\u003e\\n                    \\u003cselect id=\\\"instanceType\\\"\\u003e\\n
+      \                       \\u003coption value=\\\"t3.micro\\\"\\u003et3.micro
+      (2 vCPU, 1GB RAM)\\u003c/option\\u003e\\n                        \\u003coption
+      value=\\\"t3.small\\\"\\u003et3.small (2 vCPU, 2GB RAM)\\u003c/option\\u003e\\n
+      \                       \\u003coption value=\\\"t3.medium\\\"\\u003et3.medium
+      (2 vCPU, 4GB RAM)\\u003c/option\\u003e\\n                        \\u003coption
+      value=\\\"t3.large\\\"\\u003et3.large (2 vCPU, 8GB RAM)\\u003c/option\\u003e\\n
+      \                   \\u003c/select\\u003e\\n                \\u003c/div\\u003e\\n
+      \           \\u003c/div\\u003e\\n            \\n            \\u003cdiv class=\\\"form-grid\\\"
+      style=\\\"margin-top:10px;\\\"\\u003e\\n                \\u003cdiv class=\\\"form-group\\\"\\u003e\\n
+      \                   \\u003clabel\\u003eMin Size\\u003c/label\\u003e\\n                    \\u003cinput
+      type=\\\"number\\\" id=\\\"minSize\\\" value=\\\"1\\\" min=\\\"0\\\" max=\\\"10\\\"\\u003e\\n
+      \               \\u003c/div\\u003e\\n                \\u003cdiv class=\\\"form-group\\\"\\u003e\\n
+      \                   \\u003clabel\\u003eMax Size\\u003c/label\\u003e\\n                    \\u003cinput
+      type=\\\"number\\\" id=\\\"maxSize\\\" value=\\\"3\\\" min=\\\"1\\\" max=\\\"10\\\"\\u003e\\n
+      \               \\u003c/div\\u003e\\n                \\u003cdiv class=\\\"form-group\\\"\\u003e\\n
+      \                   \\u003clabel\\u003eDesired Capacity\\u003c/label\\u003e\\n
+      \                   \\u003cinput type=\\\"number\\\" id=\\\"desiredCapacity\\\"
+      value=\\\"2\\\" min=\\\"0\\\" max=\\\"10\\\"\\u003e\\n                \\u003c/div\\u003e\\n
+      \           \\u003c/div\\u003e\\n            \\n            \\u003ch3 style=\\\"color:#333;
+      font-size:1.1em; margin:25px 0 15px 0; padding-top:20px; border-top:2px solid
+      #e0e0e0;\\\"\\u003eCapacity Provider Settings\\u003c/h3\\u003e\\n            \\u003cp
+      style=\\\"color:#666; font-size:0.9em; margin-bottom:15px;\\\"\\u003eConfigure
+      auto-scaling behavior for ECS tasks\\u003c/p\\u003e\\n            \\n            \\u003cdiv
+      class=\\\"form-grid\\\"\\u003e\\n                \\u003cdiv class=\\\"form-group\\\"\\u003e\\n
+      \                   \\u003clabel\\u003eTarget Capacity (%) *\\u003c/label\\u003e\\n
+      \                   \\u003cinput type=\\\"number\\\" id=\\\"targetCapacity\\\"
+      value=\\\"80\\\" min=\\\"1\\\" max=\\\"100\\\" required\\u003e\\n                    \\u003csmall
+      style=\\\"color:#999; font-size:0.85em;\\\"\\u003eKeep instances at this % utilization\\u003c/small\\u003e\\n
+      \               \\u003c/div\\u003e\\n                \\u003cdiv class=\\\"form-group\\\"\\u003e\\n
+      \                   \\u003clabel\\u003eMax Scaling Step *\\u003c/label\\u003e\\n
+      \                   \\u003cinput type=\\\"number\\\" id=\\\"maxScalingStep\\\"
+      value=\\\"10\\\" min=\\\"1\\\" max=\\\"100\\\" required\\u003e\\n                    \\u003csmall
+      style=\\\"color:#999; font-size:0.85em;\\\"\\u003eMax instances to add at once\\u003c/small\\u003e\\n
+      \               \\u003c/div\\u003e\\n                \\u003cdiv class=\\\"form-group\\\"\\u003e\\n
+      \                   \\u003clabel\\u003eMin Scaling Step *\\u003c/label\\u003e\\n
+      \                   \\u003cinput type=\\\"number\\\" id=\\\"minScalingStep\\\"
+      value=\\\"1\\\" min=\\\"1\\\" max=\\\"10\\\" required\\u003e\\n                    \\u003csmall
+      style=\\\"color:#999; font-size:0.85em;\\\"\\u003eMin instances to add at once\\u003c/small\\u003e\\n
+      \               \\u003c/div\\u003e\\n            \\u003c/div\\u003e\\n            \\n
+      \           \\u003cdiv class=\\\"form-group\\\" style=\\\"margin-top:10px;\\\"\\u003e\\n
+      \               \\u003clabel\\u003eTermination Protection\\u003c/label\\u003e\\n
+      \               \\u003cselect id=\\\"terminationProtection\\\"\\u003e\\n                    \\u003coption
+      value=\\\"DISABLED\\\"\\u003eDisabled (Allow scale-down)\\u003c/option\\u003e\\n
+      \                   \\u003coption value=\\\"ENABLED\\\"\\u003eEnabled (Prevent
+      termination)\\u003c/option\\u003e\\n                \\u003c/select\\u003e\\n
+      \           \\u003c/div\\u003e\\n            \\n            \\u003cbutton onclick=\\\"createASG()\\\"
+      class=\\\"btn btn-primary\\\" style=\\\"margin-top:20px;\\\"\\u003e\U0001F680
+      Create ASG via GitOps\\u003c/button\\u003e\\n            \\n            \\u003cdiv
+      id=\\\"asgProgress\\\" style=\\\"display:none; margin-top:20px; padding:20px;
+      background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius:10px;
+      color:white;\\\"\\u003e\\n                \\u003ch4 style=\\\"margin-bottom:10px;\\\"\\u003e⏳
+      Creating Auto Scaling Group...\\u003c/h4\\u003e\\n                \\u003cdiv
+      id=\\\"asgStatus\\\" style=\\\"font-size:1.1em; font-weight:500;\\\"\\u003e\\u003c/div\\u003e\\n
+      \               \\u003cdiv style=\\\"margin-top:10px; font-size:0.9em; opacity:0.9;\\\"\\u003e\U0001F552
+      This may take 2-5 minutes. Progress updates every 5 seconds.\\u003c/div\\u003e\\n
+      \           \\u003c/div\\u003e\\n        \\u003c/div\\u003e\\n        \\n        \\u003cdiv
+      class=\\\"card\\\"\\u003e\\n            \\u003ch2\\u003e\U0001F5D1️ Delete Auto
+      Scaling Group\\u003c/h2\\u003e\\n            \\u003cp style=\\\"color:#666;
+      margin-bottom:20px;\\\"\\u003eRemove existing ASGs and terminate all EC2 instances.\\u003c/p\\u003e\\n
+      \           \\u003cdiv style=\\\"display:flex; gap:10px; align-items:flex-end;\\\"\\u003e\\n
+      \               \\u003cdiv class=\\\"form-group\\\" style=\\\"flex:1;\\\"\\u003e\\n
+      \                   \\u003clabel\\u003eSelect ASG to Delete\\u003c/label\\u003e\\n
+      \                   \\u003cselect id=\\\"asgDeleteChoice\\\" style=\\\"width:100%;\\\"\\u003e\\n
+      \                       \\u003coption value=\\\"\\\"\\u003eLoading ASGs...\\u003c/option\\u003e\\n
+      \                   \\u003c/select\\u003e\\n                \\u003c/div\\u003e\\n
+      \               \\u003cbutton onclick=\\\"deleteASG()\\\" class=\\\"btn btn-delete\\\"
+      style=\\\"padding:12px 24px;\\\"\\u003e\U0001F5D1️ Delete ASG\\u003c/button\\u003e\\n
+      \           \\u003c/div\\u003e\\n        \\u003c/div\\u003e\\n    \\u003c/div\\u003e\\n
+      \   \\n    \\u003cdiv id=\\\"editModal\\\" style=\\\"display:none; position:fixed;
+      top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000;
+      align-items:center; justify-content:center;\\\"\\u003e\\n        \\u003cdiv
+      style=\\\"background:white; border-radius:20px; padding:40px; max-width:500px;
+      width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.5);\\\"\\u003e\\n            \\u003ch2
+      style=\\\"margin-bottom:20px; color:#333;\\\"\\u003e✏️ Edit Cluster Settings\\u003c/h2\\u003e\\n
+      \           \\u003cp style=\\\"color:#666; margin-bottom:20px;\\\"\\u003eCluster:
+      \\u003cstrong id=\\\"editClusterName\\\"\\u003e\\u003c/strong\\u003e\\u003c/p\\u003e\\n
+      \           \\u003cdiv class=\\\"form-group\\\"\\u003e\\n                \\u003clabel\\u003eContainer
+      Insights\\u003c/label\\u003e\\n                \\u003cselect id=\\\"editInsights\\\"
+      style=\\\"width:100%;\\\"\\u003e\\n                    \\u003coption value=\\\"disabled\\\"\\u003eDisabled
+      (Free)\\u003c/option\\u003e\\n                    \\u003coption value=\\\"enabled\\\"\\u003eEnabled
+      (Paid)\\u003c/option\\u003e\\n                \\u003c/select\\u003e\\n            \\u003c/div\\u003e\\n
+      \           \\u003cdiv style=\\\"display:flex; gap:10px; margin-top:30px;\\\"\\u003e\\n
+      \               \\u003cbutton onclick=\\\"applyEdit()\\\" class=\\\"btn btn-primary\\\"
+      style=\\\"flex:1;\\\"\\u003e✔️ Apply Changes\\u003c/button\\u003e\\n                \\u003cbutton
+      onclick=\\\"closeEditModal()\\\" class=\\\"btn\\\" style=\\\"flex:1; background:#e0e0e0;
+      color:#333;\\\"\\u003e❌ Cancel\\u003c/button\\u003e\\n            \\u003c/div\\u003e\\n
+      \       \\u003c/div\\u003e\\n    \\u003c/div\\u003e\\n    \\n    \\u003cscript\\u003e\\n
+      \       async function loadClusters() {\\n            const list = document.getElementById('clustersList');\\n
+      \           list.innerHTML = '\\u003cdiv class=\\\"empty-state\\\"\\u003e\\u003cdiv
+      class=\\\"loading\\\"\\u003e\\u003c/div\\u003e Refreshing clusters...\\u003c/div\\u003e';\\n
+      \           \\n            try {\\n                const response = await fetch('/api/ecs/list');\\n
+      \               const data = await response.json();\\n                \\n                if
+      (data.clusters \\u0026\\u0026 data.clusters.length \\u003e 0) {\\n                    list.innerHTML
+      = '\\u003ctable\\u003e\\u003cthead\\u003e\\u003ctr\\u003e\\u003cth\\u003eCluster
+      Name\\u003c/th\\u003e\\u003cth\\u003eStatus\\u003c/th\\u003e\\u003cth\\u003eRunning
+      Tasks\\u003c/th\\u003e\\u003cth\\u003ePending Tasks\\u003c/th\\u003e\\u003cth\\u003eActions\\u003c/th\\u003e\\u003c/tr\\u003e\\u003c/thead\\u003e\\u003ctbody\\u003e'
+      +\\n                        data.clusters.map(c =\\u003e `\\u003ctr\\u003e\\u003ctd\\u003e\\u003cstrong\\u003e${c.name}\\u003c/strong\\u003e\\u003c/td\\u003e\\u003ctd\\u003e${c.status}\\u003c/td\\u003e\\u003ctd\\u003e${c.runningTasks}\\u003c/td\\u003e\\u003ctd\\u003e${c.pendingTasks}\\u003c/td\\u003e\\u003ctd\\u003e\\u003cdiv
+      class=\\\"actions\\\"\\u003e\\u003cbutton onclick=\\\"editCluster('${c.name}')\\\"
+      class=\\\"btn btn-edit\\\"\\u003e✏️ Edit\\u003c/button\\u003e\\u003cbutton onclick=\\\"deleteCluster('${c.name}')\\\"
+      class=\\\"btn btn-delete\\\"\\u003e\U0001F5D1️ Delete\\u003c/button\\u003e\\u003c/div\\u003e\\u003c/td\\u003e\\u003c/tr\\u003e`).join('')
+      +\\n                        '\\u003c/tbody\\u003e\\u003c/table\\u003e';\\n                }
+      else {\\n                    list.innerHTML = '\\u003cdiv class=\\\"empty-state\\\"\\u003e\U0001F4E6
+      No clusters found. Create your first cluster below!\\u003c/div\\u003e';\\n                }\\n
+      \           } catch (error) {\\n                list.innerHTML = '\\u003cp style=\\\"color:red;\\\"\\u003eError
+      loading clusters\\u003c/p\\u003e';\\n            }\\n        }\\n        \\n
+      \       window.onload = () =\\u003e {\\n            loadClusters();\\n            loadASGs();\\n
+      \       };\\n        \\n        let asgData = [];\\n        \\n        async
+      function loadASGs() {\\n            try {\\n                const response =
+      await fetch('/api/asg/list');\\n                const data = await response.json();\\n
+      \               asgData = data.asgs || [];\\n                const select =
+      document.getElementById('asgChoice');\\n                const deleteSelect =
+      document.getElementById('asgDeleteChoice');\\n                \\n                if
+      (asgData.length \\u003e 0) {\\n                    const options = asgData.map(a
+      =\\u003e `\\u003coption value=\\\"${a.name}\\\"\\u003e${a.name} (${a.instances}
+      instances)\\u003c/option\\u003e`).join('');\\n                    select.innerHTML
+      = '\\u003coption value=\\\"\\\"\\u003e-- Select Existing ASG --\\u003c/option\\u003e'
+      + options;\\n                    deleteSelect.innerHTML = '\\u003coption value=\\\"\\\"\\u003e--
+      Select ASG to Delete --\\u003c/option\\u003e' + options;\\n                    select.onchange
+      = () =\\u003e fillCapacityProviderSettings();\\n                } else {\\n
+      \                   select.innerHTML = '\\u003coption value=\\\"\\\"\\u003eNo
+      ASGs available - Create one below\\u003c/option\\u003e';\\n                    deleteSelect.innerHTML
+      = '\\u003coption value=\\\"\\\"\\u003eNo ASGs available\\u003c/option\\u003e';\\n
+      \               }\\n                \\n            } catch (error) {\\n                const
+      select = document.getElementById('asgChoice');\\n                const deleteSelect
+      = document.getElementById('asgDeleteChoice');\\n                select.innerHTML
+      = '\\u003coption value=\\\"\\\"\\u003e⚠️ Error loading ASGs\\u003c/option\\u003e';\\n
+      \               deleteSelect.innerHTML = '\\u003coption value=\\\"\\\"\\u003e⚠️
+      Error loading ASGs\\u003c/option\\u003e';\\n            }\\n        }\\n        \\n
+      \       function fillCapacityProviderSettings() {\\n            const asgName
+      = document.getElementById('asgChoice').value;\\n            const asg = asgData.find(a
+      =\\u003e a.name === asgName);\\n            if (asg) {\\n                document.getElementById('clusterTargetCapacity').value
+      = asg.targetCapacity;\\n                document.getElementById('clusterMaxScalingStep').value
+      = asg.maxScalingStep;\\n                document.getElementById('clusterMinScalingStep').value
+      = asg.minScalingStep;\\n                document.getElementById('clusterTerminationProtection').value
+      = asg.terminationProtection;\\n            }\\n        }\\n        \\n        function
+      toggleASGSection() {\\n            const provider = document.getElementById('capacityProvider').value;\\n
+      \           const section = document.getElementById('asgSection');\\n            \\n
+      \           if (provider === 'EC2') {\\n                section.style.display
+      = 'block';\\n                loadASGs();\\n            } else {\\n                section.style.display
+      = 'none';\\n            }\\n        }\\n        \\n        async function createASG()
+      {\\n            const asgName = document.getElementById('asgName').value;\\n
+      \           const instanceType = document.getElementById('instanceType').value;\\n
+      \           const minSize = document.getElementById('minSize').value;\\n            const
+      maxSize = document.getElementById('maxSize').value;\\n            const desiredCapacity
+      = document.getElementById('desiredCapacity').value;\\n            const targetCapacity
+      = document.getElementById('targetCapacity').value;\\n            const maxScalingStep
+      = document.getElementById('maxScalingStep').value;\\n            const minScalingStep
+      = document.getElementById('minScalingStep').value;\\n            const terminationProtection
+      = document.getElementById('terminationProtection').value;\\n            const
+      clusterName = 'temp-cluster';\\n            \\n            if (!asgName) {\\n
+      \               showAlert('Please enter ASG name', 'error');\\n                return;\\n
+      \           }\\n            if (!targetCapacity || !maxScalingStep || !minScalingStep)
+      {\\n                showAlert('Please fill in all capacity provider settings',
+      'error');\\n                return;\\n            }\\n            \\n            try
+      {\\n                const response = await fetch('/api/asg/create', {\\n                    method:
+      'POST',\\n                    headers: {'Content-Type': 'application/json'},\\n
+      \                   body: JSON.stringify({\\n                        asgName,
+      instanceType, minSize, maxSize, desiredCapacity, clusterName,\\n                        targetCapacity,
+      maxScalingStep, minScalingStep, terminationProtection\\n                    })\\n
+      \               });\\n                \\n                const data = await
+      response.json();\\n                \\n                if (response.ok) {\\n
+      \                   showAlert('ASG creation started! Tracking progress...',
+      'success');\\n                    document.getElementById('asgProgress').style.display
+      = 'block';\\n                    trackASGCreation(asgName);\\n                }
+      else {\\n                    showAlert('Error: ' + data.error, 'error');\\n
+      \               }\\n            } catch (error) {\\n                showAlert('Error:
+      ' + error.message, 'error');\\n            }\\n        }\\n        \\n        async
+      function trackASGCreation(asgName) {\\n            const statusDiv = document.getElementById('asgStatus');\\n
+      \           let attempts = 0;\\n            const maxAttempts = 60;\\n            let
+      lastCheck = Date.now();\\n            \\n            statusDiv.innerHTML = '⏳
+      Step 1/4: Triggering GitHub Actions workflow...';\\n            \\n            const
+      interval = setInterval(async () =\\u003e {\\n                attempts++;\\n
+      \               \\n                try {\\n                    const response
+      = await fetch(`/api/asg/status/${asgName}`);\\n                    const data
+      = await response.json();\\n                    \\n                    if (data.status
+      === 'active') {\\n                        statusDiv.innerHTML = `✅ ASG Created
+      Successfully!\\u003cbr\\u003eInstances: ${data.instances}/${data.desired} running`;\\n
+      \                       clearInterval(interval);\\n                        showAlert(`ASG
+      \\\"${asgName}\\\" is ready! Refreshing list...`, 'success');\\n                        setTimeout(()
+      =\\u003e {\\n                            loadASGs();\\n                            document.getElementById('asgProgress').style.display
+      = 'none';\\n                            document.getElementById('asgName').value
+      = '';\\n                        }, 2000);\\n                    } else {\\n
+      \                       const step = attempts \\u003c 10 ? '2/4: Building terraform
+      config...' : \\n                                   attempts \\u003c 30 ? '3/4:
+      Creating AWS resources...' : \\n                                   '4/4: Launching
+      EC2 instances...';\\n                        statusDiv.innerHTML = `⏳ ${step}\\u003cbr\\u003eProgress:
+      ${attempts}/${maxAttempts} checks`;\\n                    }\\n                    \\n
+      \                   // Check if workflow failed (no ASG after 2 minutes)\\n
+      \                   if (attempts \\u003e 24 \\u0026\\u0026 data.status === 'creating')
+      {\\n                        statusDiv.innerHTML = '❌ ASG Creation Failed!\\u003cbr\\u003eCheck
+      \\u003ca href=\\\"https://github.com/alonsalasi/Platform-Engineer-test/actions\\\"
+      target=\\\"_blank\\\" style=\\\"color:white; text-decoration:underline;\\\"\\u003eGitHub
+      Actions\\u003c/a\\u003e for error details.';\\n                        clearInterval(interval);\\n
+      \                       showAlert('ASG creation failed. Check GitHub Actions
+      logs.', 'error');\\n                        document.getElementById('asgProgress').style.display
+      = 'none';\\n                    }\\n                    \\n                    if
+      (attempts \\u003e= maxAttempts) {\\n                        statusDiv.innerHTML
+      = '⚠️ Timeout reached. Check \\u003ca href=\\\"https://github.com/alonsalasi/Platform-Engineer-test/actions\\\"
+      target=\\\"_blank\\\" style=\\\"color:white; text-decoration:underline;\\\"\\u003eGitHub
+      Actions\\u003c/a\\u003e for status.';\\n                        clearInterval(interval);\\n
+      \                       showAlert('ASG creation timeout. Check GitHub Actions.',
+      'error');\\n                    }\\n                } catch (error) {\\n                    statusDiv.innerHTML
+      = `⏳ Waiting for ASG creation...\\u003cbr\\u003eCheck ${attempts}/${maxAttempts}`;\\n
+      \               }\\n            }, 5000);\\n        }\\n        \\n        function
+      editCluster(clusterName) {\\n            document.getElementById('editClusterName').textContent
+      = clusterName;\\n            document.getElementById('editModal').style.display
+      = 'flex';\\n        }\\n        \\n        function closeEditModal() {\\n            document.getElementById('editModal').style.display
+      = 'none';\\n        }\\n        \\n        async function applyEdit() {\\n            const
+      clusterName = document.getElementById('editClusterName').textContent;\\n            const
+      insights = document.getElementById('editInsights').value;\\n            \\n
+      \           closeEditModal();\\n            \\n            try {\\n                const
+      response = await fetch('/api/ecs/update', {\\n                    method: 'POST',\\n
+      \                   headers: {'Content-Type': 'application/json'},\\n                    body:
+      JSON.stringify({clusterName, containerInsights: insights})\\n                });\\n
+      \               \\n                const data = await response.json();\\n                \\n
+      \               if (response.ok) {\\n                    showAlert('Update triggered!
+      Check GitHub for progress', 'success');\\n                    setTimeout(loadClusters,
+      3000);\\n                } else {\\n                    showAlert('Error: '
+      + data.error, 'error');\\n                }\\n            } catch (error) {\\n
+      \               showAlert('Failed to update cluster', 'error');\\n            }\\n
+      \       }\\n        \\n        function showAlert(message, type) {\\n            const
+      alerts = document.getElementById('alerts');\\n            const alert = document.createElement('div');\\n
+      \           alert.className = `alert alert-${type}`;\\n            alert.textContent
+      = message;\\n            alerts.appendChild(alert);\\n            setTimeout(()
+      =\\u003e alert.remove(), 5000);\\n        }\\n        \\n        async function
+      createCluster() {\\n            const clusterName = document.getElementById('clusterName').value;\\n
+      \           const capacityProvider = document.getElementById('capacityProvider').value;\\n
+      \           const containerInsights = document.getElementById('containerInsights').value;\\n
+      \           \\n            if (!clusterName) {\\n                showAlert('Please
+      enter a cluster name', 'error');\\n                return;\\n            }\\n
+      \           \\n            let payload = {clusterName, capacityProvider, containerInsights};\\n
+      \           \\n            if (capacityProvider === 'EC2') {\\n                const
+      asgChoice = document.getElementById('asgChoice').value;\\n                if
+      (!asgChoice) {\\n                    showAlert('Please create or select an ASG
+      before creating EC2 cluster', 'error');\\n                    return;\\n                }\\n
+      \               const targetCap = document.getElementById('clusterTargetCapacity').value;\\n
+      \               const maxStep = document.getElementById('clusterMaxScalingStep').value;\\n
+      \               const minStep = document.getElementById('clusterMinScalingStep').value;\\n
+      \               const termProt = document.getElementById('clusterTerminationProtection').value;\\n
+      \               \\n                if (!targetCap || !maxStep || !minStep) {\\n
+      \                   showAlert('Please fill in all capacity provider settings
+      for EC2 cluster', 'error');\\n                    return;\\n                }\\n
+      \               \\n                payload.asgName = asgChoice;\\n                payload.targetCapacity
+      = targetCap;\\n                payload.maxScalingStep = maxStep;\\n                payload.minScalingStep
+      = minStep;\\n                payload.terminationProtection = termProt;\\n            }\\n
+      \           \\n            try {\\n                const response = await fetch('/api/ecs/create',
+      {\\n                    method: 'POST',\\n                    headers: {'Content-Type':
+      'application/json'},\\n                    body: JSON.stringify(payload)\\n
+      \               });\\n                \\n                const data = await
+      response.json();\\n                \\n                if (response.ok) {\\n
+      \                   showAlert('GitHub Actions triggered! Check GitHub for progress
+      (2-5 min)', 'success');\\n                    document.getElementById('clusterName').value
+      = '';\\n                    setTimeout(loadClusters, 3000);\\n                }
+      else {\\n                    showAlert('Error: ' + data.error, 'error');\\n
+      \               }\\n            } catch (error) {\\n                showAlert('Error:
+      ' + error.message, 'error');\\n            }\\n        }\\n        \\n        async
+      function deleteASG() {\\n            const asgName = document.getElementById('asgDeleteChoice').value;\\n
+      \           \\n            if (!asgName) {\\n                showAlert('Please
+      select an ASG to delete', 'error');\\n                return;\\n            }\\n
+      \           \\n            if (!confirm(`Are you sure you want to delete ASG
+      \\\"${asgName}\\\"?\\\\n\\\\nThis will terminate all EC2 instances in the group.\\\\n\\\\nThis
+      action cannot be undone.`)) {\\n                return;\\n            }\\n            \\n
+      \           try {\\n                const response = await fetch('/api/asg/delete',
+      {\\n                    method: 'POST',\\n                    headers: {'Content-Type':
+      'application/json'},\\n                    body: JSON.stringify({asgName})\\n
+      \               });\\n                \\n                const data = await
+      response.json();\\n                \\n                if (response.ok) {\\n
+      \                   showAlert('ASG deletion triggered! Check GitHub for progress',
+      'success');\\n                    setTimeout(loadASGs, 3000);\\n                }
+      else {\\n                    showAlert('Error: ' + data.error, 'error');\\n
+      \               }\\n            } catch (error) {\\n                showAlert('Error:
+      ' + error.message, 'error');\\n            }\\n        }\\n        \\n        async
+      function deleteCluster(clusterName) {\\n            if (!confirm(`Are you sure
+      you want to delete cluster \\\"${clusterName}\\\"?\\\\n\\\\nThis action cannot
+      be undone.`)) {\\n                return;\\n            }\\n            \\n
+      \           try {\\n                const response = await fetch('/api/ecs/delete',
+      {\\n                    method: 'POST',\\n                    headers: {'Content-Type':
+      'application/json'},\\n                    body: JSON.stringify({clusterName})\\n
+      \               });\\n                \\n                const data = await
+      response.json();\\n                \\n                if (response.ok) {\\n
+      \                   showAlert('Cluster deletion triggered! Check GitHub for
+      progress', 'success');\\n                    setTimeout(loadClusters, 3000);\\n
+      \               } else {\\n                    showAlert('Error: ' + data.error,
+      'error');\\n                }\\n            } catch (error) {\\n                showAlert('Error:
+      ' + error.message, 'error');\\n            }\\n        }\\n    \\u003c/script\\u003e\\n\\u003c/body\\u003e\\n\\u003c/html\\u003e\\n\",\"server.py\":\"from
+      http.server import HTTPServer, BaseHTTPRequestHandler\\nimport json\\nimport
+      os\\nimport requests\\n\\nGITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')\\nGITHUB_REPO
+      = os.environ.get('GITHUB_REPO')\\n\\nclass ECSManagerHandler(BaseHTTPRequestHandler):\\n
+      \   def do_GET(self):\\n        if self.path == '/':\\n            self.send_response(200)\\n
+      \           self.send_header('Content-type', 'text/html')\\n            self.end_headers()\\n
+      \           with open('/app/index.html', 'rb') as f:\\n                self.wfile.write(f.read())\\n
+      \       elif self.path == '/health':\\n            self.send_response(200)\\n
+      \           self.send_header('Content-type', 'application/json')\\n            self.end_headers()\\n
+      \           self.wfile.write(json.dumps({'status': 'healthy'}).encode())\\n
+      \       elif self.path == '/api/ecs/list':\\n            import boto3\\n            try:\\n
+      \               ecs = boto3.client('ecs', region_name='us-east-1')\\n                response
+      = ecs.list_clusters()\\n                clusters = []\\n                for
+      arn in response.get('clusterArns', []):\\n                    name = arn.split('/')[-1]\\n
+      \                   desc = ecs.describe_clusters(clusters=[arn])['clusters'][0]\\n
+      \                   clusters.append({\\n                        'name': name,\\n
+      \                       'status': desc['status'],\\n                        'runningTasks':
+      desc['runningTasksCount'],\\n                        'pendingTasks': desc['pendingTasksCount']\\n
+      \                   })\\n                self.send_response(200)\\n                self.send_header('Content-type',
+      'application/json')\\n                self.end_headers()\\n                self.wfile.write(json.dumps({'clusters':
+      clusters}).encode())\\n            except Exception as e:\\n                self.send_response(500)\\n
+      \               self.send_header('Content-type', 'application/json')\\n                self.end_headers()\\n
+      \               self.wfile.write(json.dumps({'error': str(e)}).encode())\\n
+      \       elif self.path == '/api/asg/list':\\n            import boto3\\n            try:\\n
+      \               asg = boto3.client('autoscaling', region_name='us-east-1')\\n
+      \               response = asg.describe_auto_scaling_groups()\\n                groups
+      = []\\n                for group in response.get('AutoScalingGroups', []):\\n
+      \                   tags = {tag['Key']: tag['Value'] for tag in group.get('Tags',
+      [])}\\n                    groups.append({\\n                        'name':
+      group['AutoScalingGroupName'],\\n                        'minSize': group['MinSize'],\\n
+      \                       'maxSize': group['MaxSize'],\\n                        'desiredCapacity':
+      group['DesiredCapacity'],\\n                        'instances': len(group['Instances']),\\n
+      \                       'targetCapacity': tags.get('CapacityProviderTargetCapacity',
+      '80'),\\n                        'maxScalingStep': tags.get('CapacityProviderMaxScalingStep',
+      '10'),\\n                        'minScalingStep': tags.get('CapacityProviderMinScalingStep',
+      '1'),\\n                        'terminationProtection': tags.get('CapacityProviderTerminationProtection',
+      'DISABLED')\\n                    })\\n                self.send_response(200)\\n
+      \               self.send_header('Content-type', 'application/json')\\n                self.end_headers()\\n
+      \               self.wfile.write(json.dumps({'asgs': groups}).encode())\\n            except
+      Exception as e:\\n                self.send_response(500)\\n                self.send_header('Content-type',
+      'application/json')\\n                self.end_headers()\\n                self.wfile.write(json.dumps({'error':
+      str(e)}).encode())\\n        elif self.path.startswith('/api/asg/status/'):\\n
+      \           import boto3\\n            asg_name = self.path.split('/')[-1]\\n
+      \           try:\\n                asg = boto3.client('autoscaling', region_name='us-east-1')\\n
+      \               response = asg.describe_auto_scaling_groups(AutoScalingGroupNames=[asg_name])\\n
+      \               if response['AutoScalingGroups']:\\n                    group
+      = response['AutoScalingGroups'][0]\\n                    self.send_response(200)\\n
+      \                   self.send_header('Content-type', 'application/json')\\n
+      \                   self.end_headers()\\n                    self.wfile.write(json.dumps({\\n
+      \                       'status': 'active',\\n                        'instances':
+      len(group['Instances']),\\n                        'desired': group['DesiredCapacity']\\n
+      \                   }).encode())\\n                else:\\n                    self.send_response(200)\\n
+      \                   self.send_header('Content-type', 'application/json')\\n
+      \                   self.end_headers()\\n                    self.wfile.write(json.dumps({'status':
+      'creating'}).encode())\\n            except Exception as e:\\n                self.send_response(200)\\n
+      \               self.send_header('Content-type', 'application/json')\\n                self.end_headers()\\n
+      \               self.wfile.write(json.dumps({'status': 'creating'}).encode())\\n
+      \       else:\\n            self.send_response(404)\\n            self.end_headers()\\n
+      \   \\n    def do_POST(self):\\n        if self.path == '/api/asg/create':\\n
+      \           content_length = int(self.headers['Content-Length'])\\n            body
+      = self.rfile.read(content_length)\\n            data = json.loads(body.decode())\\n
+      \           \\n            webhook_url = f'https://api.github.com/repos/{GITHUB_REPO}/dispatches'\\n
+      \           payload = {\\n                'event_type': 'create-asg',\\n                'client_payload':
+      {\\n                    'asgName': data.get('asgName'),\\n                    'instanceType':
+      data.get('instanceType'),\\n                    'minSize': data.get('minSize'),\\n
+      \                   'maxSize': data.get('maxSize'),\\n                    'desiredCapacity':
+      data.get('desiredCapacity'),\\n                    'clusterName': data.get('clusterName'),\\n
+      \                   'targetCapacity': data.get('targetCapacity'),\\n                    'maxScalingStep':
+      data.get('maxScalingStep'),\\n                    'minScalingStep': data.get('minScalingStep'),\\n
+      \                   'terminationProtection': data.get('terminationProtection')\\n
+      \               }\\n            }\\n            \\n            response = requests.post(\\n
+      \               webhook_url,\\n                headers={\\n                    'Authorization':
+      f'token {GITHUB_TOKEN}',\\n                    'Accept': 'application/vnd.github.v3+json'\\n
+      \               },\\n                json=payload\\n            )\\n            \\n
+      \           if response.status_code == 204:\\n                self.send_response(200)\\n
+      \               self.send_header('Content-type', 'application/json')\\n                self.end_headers()\\n
+      \               self.wfile.write(json.dumps({\\n                    'message':
+      'ASG creation triggered',\\n                    'status': 'pending'\\n                }).encode())\\n
+      \           else:\\n                print(f'GitHub API Error: {response.status_code}
+      - {response.text}')\\n                self.send_response(500)\\n                self.send_header('Content-type',
+      'application/json')\\n                self.end_headers()\\n                self.wfile.write(json.dumps({\\n
+      \                   'error': f'GitHub API {response.status_code}: {response.text}'\\n
+      \               }).encode())\\n        \\n        elif self.path == '/api/asg/delete':\\n
+      \           content_length = int(self.headers['Content-Length'])\\n            body
+      = self.rfile.read(content_length)\\n            data = json.loads(body.decode())\\n
+      \           \\n            webhook_url = f'https://api.github.com/repos/{GITHUB_REPO}/dispatches'\\n
+      \           payload = {\\n                'event_type': 'delete-asg',\\n                'client_payload':
+      {\\n                    'asgName': data.get('asgName'),\\n                    'user':
+      'k8s-platform'\\n                }\\n            }\\n            \\n            response
+      = requests.post(\\n                webhook_url,\\n                headers={\\n
+      \                   'Authorization': f'token {GITHUB_TOKEN}',\\n                    'Accept':
+      'application/vnd.github.v3+json'\\n                },\\n                json=payload\\n
+      \           )\\n            \\n            if response.status_code == 204:\\n
+      \               self.send_response(200)\\n                self.send_header('Content-type',
+      'application/json')\\n                self.end_headers()\\n                self.wfile.write(json.dumps({\\n
+      \                   'message': 'ASG deletion triggered',\\n                    'status':
+      'pending'\\n                }).encode())\\n            else:\\n                print(f'GitHub
+      API Error: {response.status_code} - {response.text}')\\n                self.send_response(500)\\n
+      \               self.send_header('Content-type', 'application/json')\\n                self.end_headers()\\n
+      \               self.wfile.write(json.dumps({\\n                    'error':
+      f'GitHub API {response.status_code}: {response.text}'\\n                }).encode())\\n
+      \       \\n        elif self.path == '/api/ecs/create':\\n            content_length
+      = int(self.headers['Content-Length'])\\n            body = self.rfile.read(content_length)\\n
+      \           data = json.loads(body.decode())\\n            \\n            #
+      Trigger GitHub Actions\\n            webhook_url = f'https://api.github.com/repos/{GITHUB_REPO}/dispatches'\\n
+      \           payload = {\\n                'event_type': 'create-ecs-cluster',\\n
+      \               'client_payload': {\\n                    'clusterName': data.get('clusterName'),\\n
+      \                   'capacityProvider': data.get('capacityProvider'),\\n                    'containerInsights':
+      data.get('containerInsights'),\\n                    'asgName': data.get('asgName'),\\n
+      \                   'targetCapacity': data.get('targetCapacity'),\\n                    'maxScalingStep':
+      data.get('maxScalingStep'),\\n                    'minScalingStep': data.get('minScalingStep'),\\n
+      \                   'terminationProtection': data.get('terminationProtection')\\n
+      \               }\\n            }\\n            \\n            response = requests.post(\\n
+      \               webhook_url,\\n                headers={\\n                    'Authorization':
+      f'token {GITHUB_TOKEN}',\\n                    'Accept': 'application/vnd.github.v3+json'\\n
+      \               },\\n                json=payload\\n            )\\n            \\n
+      \           if response.status_code == 204:\\n                self.send_response(200)\\n
+      \               self.send_header('Content-type', 'application/json')\\n                self.end_headers()\\n
+      \               self.wfile.write(json.dumps({\\n                    'message':
+      'GitHub Actions triggered',\\n                    'status': 'pending'\\n                }).encode())\\n
+      \           else:\\n                print(f'GitHub API Error: {response.status_code}
+      - {response.text}')\\n                self.send_response(500)\\n                self.send_header('Content-type',
+      'application/json')\\n                self.end_headers()\\n                self.wfile.write(json.dumps({\\n
+      \                   'error': f'GitHub API {response.status_code}: {response.text}'\\n
+      \               }).encode())\\n        \\n        elif self.path == '/api/ecs/update':\\n
+      \           content_length = int(self.headers['Content-Length'])\\n            body
+      = self.rfile.read(content_length)\\n            data = json.loads(body.decode())\\n
+      \           \\n            # Trigger GitHub Actions\\n            webhook_url
+      = f'https://api.github.com/repos/{GITHUB_REPO}/dispatches'\\n            payload
+      = {\\n                'event_type': 'update-ecs-cluster',\\n                'client_payload':
+      {\\n                    'clusterName': data.get('clusterName'),\\n                    'containerInsights':
+      data.get('containerInsights'),\\n                    'user': 'k8s-platform'\\n
+      \               }\\n            }\\n            \\n            response = requests.post(\\n
+      \               webhook_url,\\n                headers={\\n                    'Authorization':
+      f'token {GITHUB_TOKEN}',\\n                    'Accept': 'application/vnd.github.v3+json'\\n
+      \               },\\n                json=payload\\n            )\\n            \\n
+      \           if response.status_code == 204:\\n                self.send_response(200)\\n
+      \               self.send_header('Content-type', 'application/json')\\n                self.end_headers()\\n
+      \               self.wfile.write(json.dumps({\\n                    'message':
+      'GitHub Actions triggered',\\n                    'status': 'pending'\\n                }).encode())\\n
+      \           else:\\n                print(f'GitHub API Error: {response.status_code}
+      - {response.text}')\\n                self.send_response(500)\\n                self.send_header('Content-type',
+      'application/json')\\n                self.end_headers()\\n                self.wfile.write(json.dumps({\\n
+      \                   'error': f'GitHub API {response.status_code}: {response.text}'\\n
+      \               }).encode())\\n        \\n        elif self.path == '/api/ecs/delete':\\n
+      \           content_length = int(self.headers['Content-Length'])\\n            body
+      = self.rfile.read(content_length)\\n            data = json.loads(body.decode())\\n
+      \           \\n            # Trigger GitHub Actions\\n            webhook_url
+      = f'https://api.github.com/repos/{GITHUB_REPO}/dispatches'\\n            payload
+      = {\\n                'event_type': 'delete-ecs-cluster',\\n                'client_payload':
+      {\\n                    'clusterName': data.get('clusterName'),\\n                    'user':
+      'k8s-platform'\\n                }\\n            }\\n            \\n            response
+      = requests.post(\\n                webhook_url,\\n                headers={\\n
+      \                   'Authorization': f'token {GITHUB_TOKEN}',\\n                    'Accept':
+      'application/vnd.github.v3+json'\\n                },\\n                json=payload\\n
+      \           )\\n            \\n            if response.status_code == 204:\\n
+      \               self.send_response(200)\\n                self.send_header('Content-type',
+      'application/json')\\n                self.end_headers()\\n                self.wfile.write(json.dumps({\\n
+      \                   'message': 'GitHub Actions triggered',\\n                    'status':
+      'pending'\\n                }).encode())\\n            else:\\n                self.send_response(500)\\n
+      \               self.send_header('Content-type', 'application/json')\\n                self.end_headers()\\n
+      \               self.wfile.write(json.dumps({\\n                    'error':
+      'Failed to trigger GitHub Actions'\\n                }).encode())\\n        else:\\n
+      \           self.send_response(404)\\n            self.end_headers()\\n\\nif
+      __name__ == '__main__':\\n    server = HTTPServer(('0.0.0.0', 8080), ECSManagerHandler)\\n
+      \   print('ECS Manager running on port 8080...')\\n    server.serve_forever()\\n\"},\"kind\":\"ConfigMap\",\"metadata\":{\"annotations\":{},\"name\":\"ecs-manager-code\",\"namespace\":\"ecs-platform\"}}\n"
+  creationTimestamp: "2025-11-24T07:07:14Z"
+  name: ecs-manager-code
+  namespace: ecs-platform
+  resourceVersion: "54443"
+  uid: 2863690a-c91c-40d8-9d44-1e8431362136
