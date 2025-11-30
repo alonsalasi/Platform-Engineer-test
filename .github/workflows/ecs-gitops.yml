@@ -337,6 +337,8 @@ jobs:
       
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
       
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v2
@@ -349,13 +351,62 @@ jobs:
         run: terraform init
       
       - name: Terraform Plan
-        run: terraform plan
+        run: |
+          terraform plan -no-color > terraform-plan.txt
+          cat terraform-plan.txt
+      
+      - name: Upload Plan
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-plan
+          path: terraform-plan.txt
+  
+  # STAGE 3.5: LLM Security Review
+  security_review:
+    name: "Stage 3.5: LLM Security Review"
+    runs-on: ubuntu-latest
+    needs: plan
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Download Plan
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-plan
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install Dependencies
+        run: pip install boto3
+      
+      - name: Configure AWS for Bedrock
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      
+      - name: Run LLM Security Review
+        run: |
+          chmod +x .github/scripts/llm-security-review.py
+          python3 .github/scripts/llm-security-review.py terraform-plan.txt
+      
+      - name: Upload Security Review Log
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-review-log
+          path: security-review.log
   
   # STAGE 4: Deploy to AWS
   deploy:
     name: "Stage 4: Deploy to AWS"
     runs-on: ubuntu-latest
-    needs: plan  # Wait for plan stage to complete
+    needs: security_review  # Wait for security review to approve
     environment: production  # Requires approval in GitHub settings
     steps:
       - name: Checkout
